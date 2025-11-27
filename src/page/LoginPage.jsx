@@ -162,7 +162,6 @@ export const LoginPage = () => {
             </div>
           </div>
         </div>
-
         {/* Panel Derecho - Formulario */}
         <div className="p-8 sm:p-10 md:p-12 md:w-[55%] flex flex-col justify-center bg-gradient-to-br from-white to-gray-50">
           <div>
@@ -172,7 +171,6 @@ export const LoginPage = () => {
               <div className="w-3 h-1 bg-orange-300 rounded-full"></div>
               <div className="w-3 h-1 bg-orange-200 rounded-full"></div>
             </div>
-
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
               Bienvenido
             </h2>
