@@ -2,13 +2,55 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export const NuevoProductoPage = () => {
+export const NuevaSolicitudPage = () => {
   const navigate = useNavigate();
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [productos, setProductos] = useState([]);
   const [editingCell, setEditingCell] = useState(null);
+  
+  // Estado para modales
+  const [modal, setModal] = useState({
+    show: false,
+    type: '', // 'confirm' | 'success' | 'error'
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Confirmar',
+    cancelText: 'Cancelar'
+  });
+
+  const showModal = (type, title, message, onConfirm = null, confirmText = 'Confirmar', cancelText = 'Cancelar') => {
+    setModal({
+      show: true,
+      type,
+      title,
+      message,
+      onConfirm,
+      confirmText,
+      cancelText
+    });
+  };
+
+  const closeModal = () => {
+    setModal({
+      show: false,
+      type: '',
+      title: '',
+      message: '',
+      onConfirm: null,
+      confirmText: 'Confirmar',
+      cancelText: 'Cancelar'
+    });
+  };
+
+  const handleModalConfirm = () => {
+    if (modal.onConfirm) {
+      modal.onConfirm();
+    }
+    closeModal();
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -112,9 +154,16 @@ export const NuevoProductoPage = () => {
   };
 
   const handleDeleteRow = (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este producto?')) {
-      setProductos(productos.filter(p => p.id !== id));
-    }
+    showModal(
+      'confirm',
+      '¿Eliminar Producto?',
+      '¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.',
+      () => {
+        setProductos(productos.filter(p => p.id !== id));
+      },
+      'Eliminar',
+      'Cancelar'
+    );
   };
 
   const handleAddRow = () => {
@@ -134,16 +183,31 @@ export const NuevoProductoPage = () => {
 
   const handleGuardarTodos = () => {
     console.log('Guardando productos:', productos);
-    alert(`${productos.length} productos guardados exitosamente`);
-    navigate('/dashboard');
+    showModal(
+      'success',
+      '¡Productos Guardados!',
+      `${productos.length} producto${productos.length !== 1 ? 's' : ''} guardado${productos.length !== 1 ? 's' : ''} exitosamente en el sistema.`,
+      () => {
+        navigate('/dashboard');
+      },
+      'Ir al Dashboard',
+      null
+    );
   };
 
   const handleResetear = () => {
-    if (window.confirm('¿Deseas cargar otro archivo? Se perderán los cambios no guardados.')) {
-      setFile(null);
-      setProductos([]);
-      setProcessing(false);
-    }
+    showModal(
+      'confirm',
+      '¿Cargar Nuevo Archivo?',
+      '¿Deseas cargar otro archivo? Se perderán todos los cambios no guardados en los productos actuales.',
+      () => {
+        setFile(null);
+        setProductos([]);
+        setProcessing(false);
+      },
+      'Cargar Nuevo',
+      'Cancelar'
+    );
   };
 
   return (
@@ -162,7 +226,7 @@ export const NuevoProductoPage = () => {
                 </svg>
               </button>
               <div>
-                <h1 className="text-base sm:text-lg font-bold text-gray-800">Nuevo Producto</h1>
+                <h1 className="text-base sm:text-lg font-bold text-gray-800">Nueva solicitud</h1>
                 <p className="text-xs text-gray-500 hidden sm:block">Cargar especificaciones técnicas</p>
               </div>
             </div>
@@ -343,9 +407,9 @@ export const NuevoProductoPage = () => {
             <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-800">Productos Detectados</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800">Solicitudes Detectadas</h2>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                    {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''} - Revisa y edita antes de guardar
+                    {productos.length} solicitud{productos.length !== 1 ? 'es' : ''} encontrado{productos.length !== 1 ? 'es' : ''} - Revisa y edita antes de guardar
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -667,6 +731,72 @@ export const NuevoProductoPage = () => {
           </div>
         )}
       </main>
+
+      {/* Modal Universal */}
+      {modal.show && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 animate-scale-in">
+            {/* Icono según el tipo */}
+            <div className="flex justify-center mb-4">
+              {modal.type === 'confirm' && (
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              )}
+              {modal.type === 'success' && (
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+              {modal.type === 'error' && (
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            {/* Título */}
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-800 text-center mb-2">
+              {modal.title}
+            </h3>
+
+            {/* Mensaje */}
+            <p className="text-sm sm:text-base text-gray-600 text-center mb-6">
+              {modal.message}
+            </p>
+
+            {/* Botones */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {modal.cancelText && (
+                <button
+                  onClick={closeModal}
+                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg transition-colors text-sm sm:text-base"
+                >
+                  {modal.cancelText}
+                </button>
+              )}
+              <button
+                onClick={handleModalConfirm}
+                className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all shadow-lg text-sm sm:text-base ${
+                  modal.type === 'confirm'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-orange-500/30 hover:shadow-xl'
+                    : modal.type === 'success'
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-green-500/30 hover:shadow-xl'
+                    : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-red-500/30 hover:shadow-xl'
+                }`}
+              >
+                {modal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -11,7 +11,7 @@ export const ErrorPage = () => {
       <p>
         <i>{error.statusText || error.message}</i>
       </p>
-      <Link to="/">Volver al inicio</Link>
+      <Link to="/dashboard">Volver al inicio</Link>
     </div>
   )
 }

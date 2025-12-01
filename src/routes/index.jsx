@@ -7,8 +7,11 @@ import { MainLayout } from "../layout/MainLayout"
 import { ErrorPage } from "../page/ErrorPage"
 import { LoginPage } from "../page/LoginPage"
 import { DashboardPage } from "../page/DashboardPage"
-import { NuevoProductoPage } from "../page/NuevoProductoPage"
-import { ProductosPage } from "../page/ProductosPage"
+import { NuevaSolicitudPage } from "../page/NuevaSolicitudPage"
+import { GestionSolicitudesPage } from "../page/GestionSolicitudesPage"
+import { GestionSolicitudesDetallesPage } from "../page/GestionSolicitudesDetallesPage"
+import { SolicitudesPage } from "../page/SolicitudesPage"
+import { SolicitudDetallesPage } from "../page/SolicitudDetallesPage"
 
 export const router = createBrowserRouter([
     {
@@ -29,12 +32,24 @@ export const router = createBrowserRouter([
                 element: <DashboardPage />
             },
             {
-                path: "productos/nuevo",
-                element: <NuevoProductoPage />
+                path: "solicitudes/nueva",
+                element: <NuevaSolicitudPage />
             },
             {
-                path: "productos/lista",
-                element: <ProductosPage />
+                path: "solicitudes/lista",
+                element: <SolicitudesPage />
+            },
+            {
+                path: "solicitudes/lista/:id",
+                element: <SolicitudDetallesPage />
+            },
+            {
+                path: "solicitudes/gestion",
+                element: <GestionSolicitudesPage />
+            },
+            {
+                path: "solicitudes/gestion/:id",
+                element: <GestionSolicitudesDetallesPage />
             }
         ]
 }
