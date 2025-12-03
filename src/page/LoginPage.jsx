@@ -108,7 +108,11 @@ export const LoginPage = () => {
             {/* Logo */}
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <img src="./src/assets/logo20.png" alt="Logo" className="w-16 h-16 sm:w-20 sm:h-20 filter drop-shadow-lg" />
+                <img 
+                  src="./src/assets/logo20.png" 
+                  alt="Logo" 
+                  className="w-16 h-16 sm:w-20 sm:h-20 filter brightness-0 invert drop-shadow-lg" 
+                />
               </div>
               <div className="inline-block bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                 <span className="text-sm font-medium">Corporación B&D</span>
