@@ -341,7 +341,7 @@ export const DashboardPage = () => {
         </div>
 
         {/* Quick Actions - SIMÉTRICO (3 botones siempre) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           {quickActions.map((action, index) => (
             <Link key={index} to={action.link} className="group">
               <div className={`${

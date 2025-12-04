@@ -79,73 +79,75 @@ export const NuevaSolicitudPage = () => {
     }
   };
 
-  const handleProcessar = async () => {
+const handleProcessar = async () => {
+  if (!file) {
+    showModal(
+      'error',
+      'Sin archivo',
+      'Debes seleccionar un archivo antes de procesar.'
+    );
+    return;
+  }
+
+  try {
     setProcessing(true);
-    
-    // Simular procesamiento con IA - detectando múltiples productos
-    setTimeout(() => {
-      const mockProductos = [
-        {
-          id: 1,
-          nombre: 'Válvula de Bola 2" Bronce',
-          categoria: 'Válvulas',
-          marca: 'Apollo',
-          modelo: 'APO-7700',
-          material: 'Bronce',
-          precio: '45.50',
-          stock: '150',
-          confianza: 98
-        },
-        {
-          id: 2,
-          nombre: 'Válvula de Bola 1" Bronce',
-          categoria: 'Válvulas',
-          marca: 'Apollo',
-          modelo: 'APO-7701',
-          material: 'Bronce',
-          precio: '32.80',
-          stock: '200',
-          confianza: 95
-        },
-        {
-          id: 3,
-          nombre: 'Tubo PVC 4" Schedule 40',
-          categoria: 'Tubería',
-          marca: 'Pavco',
-          modelo: 'PVC-4-40',
-          material: 'PVC',
-          precio: '12.30',
-          stock: '85',
-          confianza: 92
-        },
-        {
-          id: 4,
-          nombre: 'Codo 90° 2" Roscado',
-          categoria: 'Accesorios',
-          marca: 'Mueller',
-          modelo: 'C90-2',
-          material: 'Hierro Galvanizado',
-          precio: '5.75',
-          stock: '340',
-          confianza: 88
-        },
-        {
-          id: 5,
-          nombre: 'Válvula Check 3" Brida',
-          categoria: 'Válvulas',
-          marca: 'Nibco',
-          modelo: 'CHK-3B',
-          material: 'Hierro Fundido',
-          precio: '125.00',
-          stock: '45',
-          confianza: 97
-        }
-      ];
-      
-      setProductos(mockProductos);
-      setProcessing(false);
-    }, 3000);
-  };
+
+    const formData = new FormData();
+    formData.append('file', file); // el campo debe llamarse como lo espera tu backend
+
+    const response = await fetch('http://localhost:3000/api/extract', {
+      method: 'POST',
+      body: formData,
+      // NO pongas Content-Type, fetch lo arma solo con FormData
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status} al procesar el archivo`);
+    }
+
+    const data = await response.json();
+    // data = { message, data: [...], savedFile }
+
+    const requestsRaw = data.data || [];
+
+    if (!Array.isArray(requestsRaw)) {
+      throw new Error('La respuesta del servidor no contiene una lista de productos válida.');
+    }
+
+    // Mapear al formato que usa la tabla (incluye id y estatus)
+    const requests = requestsRaw.map((item, index) => ({
+      id: index + 1,
+      nombre: item.nombre,
+      categoria: item.categoria,
+      marca: item.marca,
+      modelo: item.modelo,
+      material: item.material,
+      precio: item.precio,
+      stock: item.stock,
+      confianza: item.confianza,
+      estatus: 'Borrador',
+    }));
+
+    setProductos(requests);
+    setProcessing(false);
+
+    showModal(
+      'success',
+      'Documento procesado',
+      `Se detectaron ${requests.length} productos en el archivo.`
+    );
+  } catch (err) {
+    console.error(err);
+    setProcessing(false);
+    showModal(
+      'error',
+      'Error al procesar',
+      err.message || 'Ocurrió un error al comunicarse con el servidor.'
+    );
+  }
+};
+
+
 
   const handleCellEdit = (id, field, value) => {
     setProductos(productos.map(p => 
@@ -181,8 +183,38 @@ export const NuevaSolicitudPage = () => {
     }]);
   };
 
-  const handleGuardarTodos = () => {
-    console.log('Guardando productos:', productos);
+const handleGuardarTodos = async () => {
+  try {
+    if (!productos || productos.length === 0) {
+      showModal(
+        'error',
+        'Sin productos',
+        'No hay productos para guardar. Procesa un archivo primero.'
+      );
+      return;
+    }
+
+    // Solo productos válidos (opcional)
+    const productosParaGuardar = productos
+      .filter(p => p.estatus !== 'Rechazado') // o p.estatus === 'Validado'
+      .map(({ id, confianza, ...rest }) => rest); // limpia campos solo de UI
+
+    const response = await fetch('http://localhost:3000/api/requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: productosParaGuardar, // ajusta la clave al contrato de tu API
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error(`Error ${response.status} al guardar productos: ${errText}`);
+    }
+
+    const result = await response.json();
+    console.log('Productos guardados:', result);
+
     showModal(
       'success',
       '¡Productos Guardados!',
@@ -193,7 +225,20 @@ export const NuevaSolicitudPage = () => {
       'Ir al Dashboard',
       null
     );
-  };
+
+    // Opcional: limpiar estado o ir al dashboard
+    // setProductos([]);
+    // navigate('/dashboard');
+
+  } catch (err) {
+    console.error(err);
+    showModal(
+      'error',
+      'Error al guardar',
+      err.message || 'Ocurrió un error al guardar los productos.'
+    );
+  }
+};
 
   const handleResetear = () => {
     showModal(
@@ -360,7 +405,7 @@ export const NuevaSolicitudPage = () => {
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={handleProcessar}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 flex items-center justify-center gap-2 text-sm sm:text-base"
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
