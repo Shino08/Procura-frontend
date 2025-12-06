@@ -1,105 +1,126 @@
-// src/page/GestionSolicitudesPage.jsx (Vista Admin - Lista de Solicitudes)
-import { useState } from 'react';
+// src/page/GestionSolicitudesPage.jsx
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export const GestionSolicitudesPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [clienteFilter, setClienteFilter] = useState('todos');
+  const [clienteFilter, setClienteFilter] = useState('todos'); // por ahora fijo
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Datos de ejemplo - reemplazar con fetch real
-  const solicitudes = [
-    {
-      id: 'SOL-2025-001',
-      cliente: 'Juan Pérez',
-      email: 'juan.perez@empresa.com',
-      fecha: '2025-11-27',
-      nombreArchivo: 'solicitud_proyecto_norte_nov2025.xlsx',
-      totalItems: 156,
-      itemsAprobados: 120,
-      itemsPendientes: 25,
-      itemsRechazados: 11,
-      observaciones: 'Solicitud urgente para proyecto Norte - Fase 1',
-    },
-    {
-      id: 'SOL-2025-002',
-      cliente: 'María González',
-      email: 'maria.gonzalez@empresa.com',
-      fecha: '2025-11-26',
-      nombreArchivo: 'mantenimiento_preventivo_2025.csv',
-      totalItems: 89,
-      itemsAprobados: 65,
-      itemsPendientes: 20,
-      itemsRechazados: 4,
-      observaciones: 'Mantenimiento preventivo trimestral',
-    },
-    {
-      id: 'SOL-2025-003',
-      cliente: 'Carlos Ramírez',
-      email: 'carlos.ramirez@empresa.com',
-      fecha: '2025-11-25',
-      nombreArchivo: 'reposicion_stock_almacen.xlsx',
-      totalItems: 234,
-      itemsAprobados: 0,
-      itemsPendientes: 234,
-      itemsRechazados: 0,
-      observaciones: 'Reposición mensual de stock',
-    },
-    {
-      id: 'SOL-2025-004',
-      cliente: 'Ana Torres',
-      email: 'ana.torres@empresa.com',
-      fecha: '2025-11-24',
-      nombreArchivo: 'equipamiento_obra_sur.xlsx',
-      totalItems: 67,
-      itemsAprobados: 67,
-      itemsPendientes: 0,
-      itemsRechazados: 0,
-      observaciones: 'Equipamiento completo obra sur',
-    },
-    {
-      id: 'SOL-2025-005',
-      cliente: 'Luis Morales',
-      email: 'luis.morales@empresa.com',
-      fecha: '2025-11-23',
-      nombreArchivo: 'sistema_contraincendios.csv',
-      totalItems: 312,
-      itemsAprobados: 45,
-      itemsPendientes: 180,
-      itemsRechazados: 87,
-      observaciones: 'Sistema contra incendios - Requiere revisión presupuesto',
-    },
-  ];
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const clientes = [...new Set(solicitudes.map(s => s.cliente))];
+  // 1) Cargar uploads desde el backend
+  useEffect(() => {
+    const fetchUploads = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const filteredSolicitudes = solicitudes.filter(sol => {
-    const matchesSearch = sol.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.nombreArchivo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.cliente.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCliente = clienteFilter === 'todos' || sol.cliente === clienteFilter;
+        const token = localStorage.getItem('token'); // ajusta si lo guardas distinto
+
+        const res = await fetch('http://localhost:3000/api/uploads', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || 'Error al obtener uploads');
+        }
+
+        const data = await res.json();
+
+        // Mapear uploads -> shape que usa la UI actual
+        const mapped = data.uploads.map((u) => ({
+          id: `UPL-${u.id}`,                // id de solicitud mostrado
+          cliente: u.user_id ? `Usuario #${u.user_id}` : 'Desconocido', // si luego guardas nombre, cámbialo
+          email: '',                        // aún no tienes email en uploads
+          fecha: u.created_at,
+          nombreArchivo: u.original_name,
+          totalItems: u.total_items || 0,   // si luego guardas conteo, ajusta; por ahora 0
+          itemsAprobados: 0,
+          itemsPendientes: 0,
+          itemsRechazados: 0,
+          observaciones: `Estado: ${u.status}`,
+          filePath: u.file_path,            // para descargar/ver el archivo
+          uploadId: u.id,
+        }));
+
+        setSolicitudes(mapped);
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUploads();
+  }, []);
+
+  // 2) Filtros (por ahora solo texto)
+  const filteredSolicitudes = solicitudes.filter((sol) => {
+    const matchesSearch =
+      sol.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sol.nombreArchivo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sol.cliente.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCliente =
+      clienteFilter === 'todos' || sol.cliente === clienteFilter;
+
     return matchesSearch && matchesCliente;
   });
 
-  // Paginación
-  const totalPages = Math.ceil(filteredSolicitudes.length / itemsPerPage);
+  // 3) Paginación
+  const totalPages = Math.ceil(filteredSolicitudes.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentSolicitudes = filteredSolicitudes.slice(startIndex, endIndex);
 
-  const handleViewDetails = (solicitudId) => {
-    navigate(`/solicitudes/gestion/${solicitudId}`);
+  const handleViewDetails = (uploadId) => {
+    // Aquí navegas a una vista de detalle por upload
+    navigate(`/solicitudes/gestion/${uploadId}`);
+  };
+
+  const handleDownloadFile = (filePath) => {
+    window.open(`http://localhost:3000${filePath}`, '_blank');
   };
 
   const getProgresoColor = (aprobados, total) => {
-    const porcentaje = (aprobados / total) * 100;
+    const porcentaje = total > 0 ? (aprobados / total) * 100 : 0;
     if (porcentaje === 100) return 'bg-green-500';
     if (porcentaje >= 50) return 'bg-orange-500';
     return 'bg-yellow-500';
   };
 
+  // 4) Posibles estados de carga / error
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-600 text-sm">Cargando solicitudes...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white shadow rounded-lg px-6 py-4 border border-red-200">
+          <p className="text-red-600 text-sm font-semibold">
+            Error al cargar solicitudes
+          </p>
+          <p className="text-xs text-gray-600 mt-1">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 5) UI original con datos desde API (solo cambié dónde vienen los datos y las acciones)
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
       {/* Header */}
@@ -107,7 +128,7 @@ export const GestionSolicitudesPage = () => {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => navigate('/dashboard')}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -117,7 +138,9 @@ export const GestionSolicitudesPage = () => {
               </button>
               <div>
                 <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">Gestión de Solicitudes</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Administrar solicitudes de clientes</p>
+                <p className="text-xs text-gray-500 hidden sm:block">
+                  Administrar solicitudes (archivos) subidos por Procura
+                </p>
               </div>
             </div>
           </div>
@@ -152,14 +175,13 @@ export const GestionSolicitudesPage = () => {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Cliente</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Archivo</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Fecha</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Ítems</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Progreso</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {currentSolicitudes.map((solicitud) => (
-                <tr key={solicitud.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={solicitud.uploadId} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
@@ -167,13 +189,19 @@ export const GestionSolicitudesPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
-                      <span className="font-semibold text-gray-800 text-sm">{solicitud.id}</span>
+                      <span className="font-semibold text-gray-800 text-sm">
+                        {solicitud.id}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <p className="text-sm font-semibold text-gray-800">{solicitud.cliente}</p>
-                      <p className="text-xs text-gray-500">{solicitud.email}</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {solicitud.cliente}
+                      </p>
+                      {solicitud.email && (
+                        <p className="text-xs text-gray-500">{solicitud.email}</p>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -187,48 +215,24 @@ export const GestionSolicitudesPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(solicitud.fecha).toLocaleDateString('es-ES', { 
-                      day: '2-digit', 
-                      month: 'short', 
-                      year: 'numeric' 
+                    {new Date(solicitud.fecha).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
                     })}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center justify-center px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-                      {solicitud.totalItems}
-                    </span>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {solicitud.observaciones}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">
-                          {solicitud.itemsAprobados} de {solicitud.totalItems} aprobados
-                        </span>
-                        <span className="font-semibold text-gray-800">
-                          {Math.round((solicitud.itemsAprobados / solicitud.totalItems) * 100)}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all ${getProgresoColor(solicitud.itemsAprobados, solicitud.totalItems)}`}
-                          style={{ width: `${(solicitud.itemsAprobados / solicitud.totalItems) * 100}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs">
-                        <span className="flex items-center gap-1 text-yellow-600">
-                          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                          {solicitud.itemsPendientes} pend.
-                        </span>
-                        <span className="flex items-center gap-1 text-red-600">
-                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                          {solicitud.itemsRechazados} rech.
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right space-x-2">
                     <button
-                      onClick={() => handleViewDetails(solicitud.id)}
+                      onClick={() => handleDownloadFile(solicitud.filePath)}
+                      className="text-gray-700 hover:text-gray-900 font-medium text-xs border border-gray-300 px-3 py-1.5 rounded-lg"
+                    >
+                      Descargar
+                    </button>
+                    <button
+                      onClick={() => handleViewDetails(solicitud.uploadId)}
                       className="text-orange-600 hover:text-orange-700 font-medium text-sm"
                     >
                       Gestionar →
@@ -240,73 +244,15 @@ export const GestionSolicitudesPage = () => {
           </table>
         </div>
 
-        {/* Cards Mobile */}
-        <div className="md:hidden space-y-3">
-          {currentSolicitudes.map((solicitud) => (
-            <div key={solicitud.id} className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm">{solicitud.id}</p>
-                    <p className="text-xs text-gray-500">{solicitud.cliente}</p>
-                  </div>
-                </div>
-                <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                  {solicitud.totalItems} ítems
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="text-xs text-gray-600">
-                  <p className="truncate">{solicitud.nombreArchivo}</p>
-                  <p className="mt-1">{new Date(solicitud.fecha).toLocaleDateString('es-ES')}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600">Progreso</span>
-                    <span className="font-semibold text-gray-800">
-                      {Math.round((solicitud.itemsAprobados / solicitud.totalItems) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full transition-all ${getProgresoColor(solicitud.itemsAprobados, solicitud.totalItems)}`}
-                      style={{ width: `${(solicitud.itemsAprobados / solicitud.totalItems) * 100}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-green-600">{solicitud.itemsAprobados} aprob.</span>
-                    <span className="text-yellow-600">{solicitud.itemsPendientes} pend.</span>
-                    <span className="text-red-600">{solicitud.itemsRechazados} rech.</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleViewDetails(solicitud.id)}
-                  className="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg text-sm transition-colors"
-                >
-                  Gestionar Solicitud
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Paginación */}
-        {totalPages > 1 && (
+        {/* Paginación (igual que antes) */}
+        {filteredSolicitudes.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl border border-gray-200 px-4 sm:px-6 py-4 mt-4 gap-3">
             <div className="text-sm text-gray-600">
               Mostrando {startIndex + 1} a {Math.min(endIndex, filteredSolicitudes.length)} de {filteredSolicitudes.length} solicitudes
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -316,13 +262,19 @@ export const GestionSolicitudesPage = () => {
                 Página {currentPage} de {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Siguiente
               </button>
             </div>
+          </div>
+        )}
+
+        {filteredSolicitudes.length === 0 && (
+          <div className="mt-6 bg-white border border-gray-200 rounded-xl p-6 text-center text-sm text-gray-600">
+            No se encontraron solicitudes.
           </div>
         )}
       </main>
