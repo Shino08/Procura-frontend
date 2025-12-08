@@ -186,34 +186,34 @@ export const NotificacionesPanel = ({ isOpen, onClose }) => {
   return (
     <>
       {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black/20 z-40"
+      <div
+        className="fixed inset-0 bg-black/20 z-40 animate-fade-in"
         onClick={onClose}
       ></div>
 
       {/* Panel */}
-      <div className="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col animate-slide-in-right">
+      <div className="fixed top-0 right-0 h-full w-full sm:w-96 lg:w-[400px] bg-white shadow-2xl z-50 flex flex-col animate-slide-in-right">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-orange-500 to-orange-600">
+        <div className="p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-orange-500 to-orange-600">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-bold text-white">Notificaciones</h2>
+            <h2 className="text-base sm:text-lg font-bold text-white">Notificaciones</h2>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-white/20 rounded-lg transition-all duration-200 hover:scale-110"
             >
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
           {notificacionesNoLeidas > 0 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-white/90">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+              <p className="text-xs sm:text-sm text-white/90 animate-pulse-once">
                 {notificacionesNoLeidas} sin leer
               </p>
               <button
                 onClick={marcarTodasLeidas}
-                className="text-xs text-white/90 hover:text-white underline"
+                className="text-xs text-white/90 hover:text-white underline transition-all duration-200 hover:scale-105 text-left sm:text-right"
               >
                 Marcar todas como leídas
               </button>
@@ -224,33 +224,38 @@ export const NotificacionesPanel = ({ isOpen, onClose }) => {
         {/* Lista de notificaciones */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <svg className="animate-spin h-8 w-8 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <div className="flex flex-col items-center justify-center h-32 sm:h-48 animate-fade-in">
+              <div className="relative">
+                <svg className="animate-spin h-8 w-8 sm:h-10 sm:w-10 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div className="absolute inset-0 rounded-full bg-orange-600/20 animate-ping"></div>
+              </div>
+              <p className="text-xs sm:text-sm text-gray-500 mt-3 animate-slide-up">Cargando notificaciones...</p>
             </div>
           ) : notificaciones.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center px-4">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="flex flex-col items-center justify-center h-64 text-center px-4 animate-fade-in">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 hover:scale-110 transition-transform duration-300">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
               </div>
-              <p className="text-sm font-medium text-gray-600">No tienes notificaciones</p>
-              <p className="text-xs text-gray-500 mt-1">Te avisaremos cuando haya novedades</p>
+              <p className="text-sm font-medium text-gray-600 animate-slide-up">No tienes notificaciones</p>
+              <p className="text-xs text-gray-500 mt-1 animate-slide-up animation-delay-200">Te avisaremos cuando haya novedades</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {notificaciones.map((notif) => (
+              {notificaciones.map((notif, index) => (
                 <div
                   key={notif.id}
-                  className={`p-4 hover:bg-gray-50 transition-colors ${!notif.leida ? 'bg-orange-50/30' : ''}`}
+                  className={`group p-3 sm:p-4 hover:bg-gray-50 transition-all duration-300 ${!notif.leida ? 'bg-orange-50/40 border-l-4 border-orange-400 animate-slide-in-left' : ''} hover:shadow-sm`}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex gap-3">
                     {/* Icono */}
-                    <div className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center bg-${notif.color}-100`}>
-                      <svg className={`w-5 h-5 text-${notif.color}-600`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-full flex items-center justify-center bg-${notif.color}-100 group-hover:scale-110 transition-transform duration-200 ${!notif.leida ? 'ring-2 ring-offset-2 ring-orange-400 animate-pulse-once' : ''}`}>
+                      <svg className={`w-4 h-4 sm:w-5 sm:h-5 text-${notif.color}-600`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         {getIcono(notif.icono)}
                       </svg>
                     </div>
@@ -258,41 +263,55 @@ export const NotificacionesPanel = ({ isOpen, onClose }) => {
                     {/* Contenido */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="text-sm font-semibold text-gray-800">
+                        <h4 className="text-sm font-semibold text-gray-800 line-clamp-1 group-hover:text-orange-600 transition-colors">
                           {notif.titulo}
                         </h4>
-                        {!notif.leida && (
-                          <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0 mt-1"></div>
-                        )}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {!notif.leida && (
+                            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                          )}
+                          <button
+                            onClick={() => eliminarNotificacion(notif.id)}
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-all duration-200 hover:scale-110"
+                            title="Eliminar"
+                          >
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                      
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+
+                      <p className="text-xs text-gray-600 mb-2 line-clamp-2 group-hover:text-gray-700 transition-colors">
                         {notif.mensaje}
                       </p>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
                           {formatearFecha(notif.fecha)}
                         </span>
-                        
-                        <div className="flex items-center gap-2">
+
+                        <div className="flex items-center gap-1 sm:gap-2">
                           {notif.solicitudId && (
                             <Link
-                              to={`/solicitudes/${notif.solicitudId}`}
-                              onClick={() => {
-                                marcarComoLeida(notif.id);
-                                onClose();
-                              }}
-                              className="text-xs font-medium text-orange-600 hover:text-orange-700"
+                              // to={`/solicitudes/${notif.solicitudId}`}
+                              // onClick={() => {
+                              //   marcarComoLeida(notif.id);
+                              //   onClose();
+                              // }}
+                              className="text-xs font-medium text-orange-600 hover:text-orange-700 transition-all duration-200 hover:scale-105 whitespace-nowrap"
                             >
-                              Ver solicitud →
+                              Ver →
                             </Link>
                           )}
-                          
+
                           {!notif.leida && (
                             <button
                               onClick={() => marcarComoLeida(notif.id)}
-                              className="text-xs text-gray-500 hover:text-gray-700"
+                              className="text-xs p-1 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded transition-all duration-200 hover:scale-110"
                               title="Marcar como leída"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -300,16 +319,6 @@ export const NotificacionesPanel = ({ isOpen, onClose }) => {
                               </svg>
                             </button>
                           )}
-
-                          <button
-                            onClick={() => eliminarNotificacion(notif.id)}
-                            className="text-xs text-gray-400 hover:text-red-600"
-                            title="Eliminar"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
                         </div>
                       </div>
                     </div>

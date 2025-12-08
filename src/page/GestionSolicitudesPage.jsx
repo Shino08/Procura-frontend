@@ -138,7 +138,7 @@ export const GestionSolicitudesPage = () => {
               </button>
               <div>
                 <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">Gestión de Solicitudes</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">
+                <p className="text-xs text-gray-500 hidden md:block">
                   Administrar solicitudes (archivos) subidos por Procura
                 </p>
               </div>
@@ -149,10 +149,10 @@ export const GestionSolicitudesPage = () => {
 
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Filtros */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6 mb-6">
+          <div className="grid grid-cols-1 gap-3">
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -160,7 +160,7 @@ export const GestionSolicitudesPage = () => {
                 placeholder="Buscar por N°, archivo o cliente..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
               />
             </div>
           </div>
@@ -171,77 +171,158 @@ export const GestionSolicitudesPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Solicitud</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Cliente</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Archivo</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Fecha</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">Acciones</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase">Solicitud</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase">Cliente</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase">Archivo</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase hidden sm:table-cell">Fecha</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-600 uppercase hidden lg:table-cell">Estado</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right text-xs font-semibold text-gray-600 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {currentSolicitudes.map((solicitud) => (
                 <tr key={solicitud.uploadId} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
-                      <span className="font-semibold text-gray-800 text-sm">
+                      <span className="font-semibold text-gray-800 text-xs sm:text-sm">
                         {solicitud.id}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4">
                     <div>
-                      <p className="text-sm font-semibold text-gray-800">
+                      <p className="text-xs sm:text-sm font-semibold text-gray-800">
                         {solicitud.cliente}
                       </p>
                       {solicitud.email && (
-                        <p className="text-xs text-gray-500">{solicitud.email}</p>
+                        <p className="text-xs text-gray-500 hidden sm:block">{solicitud.email}</p>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 max-w-xs">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4">
+                    <div className="flex items-center gap-1 sm:gap-2 max-w-xs">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
-                      <p className="text-sm text-gray-700 truncate" title={solicitud.nombreArchivo}>
+                      <p className="text-xs sm:text-sm text-gray-700 truncate" title={solicitud.nombreArchivo}>
                         {solicitud.nombreArchivo}
                       </p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">
                     {new Date(solicitud.fecha).toLocaleDateString('es-ES', {
                       day: '2-digit',
                       month: 'short',
                       year: 'numeric',
                     })}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700 hidden lg:table-cell">
                     {solicitud.observaciones}
                   </td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleDownloadFile(solicitud.filePath)}
-                      className="text-gray-700 hover:text-gray-900 font-medium text-xs border border-gray-300 px-3 py-1.5 rounded-lg"
-                    >
-                      Descargar
-                    </button>
-                    <button
-                      onClick={() => handleViewDetails(solicitud.uploadId)}
-                      className="text-orange-600 hover:text-orange-700 font-medium text-sm"
-                    >
-                      Gestionar →
-                    </button>
+                  <td className="px-4 sm:px-6 py-4 text-right">
+                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 sm:space-x-2">
+                      <button
+                        onClick={() => handleDownloadFile(solicitud.filePath)}
+                        className="text-gray-700 hover:text-gray-900 font-medium text-xs border border-gray-300 px-2 sm:px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Descargar
+                      </button>
+                      <button
+                        onClick={() => handleViewDetails(solicitud.uploadId)}
+                        className="text-orange-600 hover:text-orange-700 font-medium text-xs sm:text-sm px-2 sm:px-3 py-1.5 transition-colors"
+                      >
+                        Gestionar →
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Cards Mobile */}
+        <div className="md:hidden space-y-4">
+          {currentSolicitudes.map((solicitud) => (
+            <div key={solicitud.uploadId} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+              {/* Header del card */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-800 text-sm block">
+                      {solicitud.id}
+                    </span>
+                    <p className="text-xs text-gray-500">
+                      {new Date(solicitud.fecha).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-orange-400 mt-2"></div>
+              </div>
+
+              {/* Cliente */}
+              <div className="mb-3">
+                <p className="text-xs text-gray-500 mb-1">Cliente</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {solicitud.cliente}
+                </p>
+                {solicitud.email && (
+                  <p className="text-xs text-gray-500 mt-1">{solicitud.email}</p>
+                )}
+              </div>
+
+              {/* Archivo */}
+              <div className="mb-3">
+                <p className="text-xs text-gray-500 mb-1">Archivo</p>
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-sm text-gray-700 truncate" title={solicitud.nombreArchivo}>
+                    {solicitud.nombreArchivo}
+                  </p>
+                </div>
+              </div>
+
+              {/* Estado */}
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 mb-1">Estado</p>
+                <p className="text-sm text-gray-700">
+                  {solicitud.observaciones}
+                </p>
+              </div>
+
+              {/* Acciones */}
+              <div className="flex gap-2 pt-3 border-t border-gray-100">
+                <button
+                  onClick={() => handleDownloadFile(solicitud.filePath)}
+                  className="flex-1 text-gray-700 hover:text-gray-900 font-medium text-xs border border-gray-300 px-3 py-2 rounded-lg transition-colors"
+                >
+                  Descargar
+                </button>
+                <button
+                  onClick={() => handleViewDetails(solicitud.uploadId)}
+                  className="flex-1 text-orange-600 hover:text-orange-700 font-medium text-sm px-3 py-2 rounded-lg transition-colors"
+                >
+                  Gestionar
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Paginación (igual que antes) */}

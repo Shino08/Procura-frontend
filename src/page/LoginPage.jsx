@@ -64,8 +64,6 @@ export const LoginPage = () => {
       localStorage.setItem('userRole', payload.role);
       localStorage.setItem('userEmail', payload.email);
 
-      console.log('Login exitoso:', payload);
-
       // Redireccionar según el rol
       if (payload.role === 'admin') {
         navigate('/dashboard');
