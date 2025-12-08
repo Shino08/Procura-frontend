@@ -335,7 +335,6 @@ export const GestionSolicitudesDetallesPage = () => {
   </div>
 </div>
 
-
         {/* Filtros - Optimizado para móvil */}
         <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">

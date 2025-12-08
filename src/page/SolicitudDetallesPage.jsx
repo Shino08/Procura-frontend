@@ -207,72 +207,72 @@ export const SolicitudDetallesPage = () => {
 
         {/* Estadísticas - Grid simétrico */}
         <div className="mb-6 sm:mb-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-            {/* Total */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg transition-all duration-200 group cursor-pointer">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 group-hover:scale-110 transition-all">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.total}</h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">Total</p>
-            </div>
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+    {/* Total */}
+    <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200 group">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 group-hover:scale-110 transition-all">
+          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-2xl font-bold text-gray-800 mb-1">{stats.total}</h3>
+      <p className="text-sm text-gray-600">Total</p>
+    </div>
 
-            {/* Aprobados */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-green-300 transition-all duration-200 group cursor-pointer">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 group-hover:scale-110 transition-all">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.aprobados}</h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">Aprobados</p>
-            </div>
+    {/* Aprobados */}
+    <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-lg hover:border-green-300 transition-all duration-200 group">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 group-hover:scale-110 transition-all">
+          <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-2xl font-bold text-gray-800 mb-1">{stats.aprobados}</h3>
+      <p className="text-sm text-gray-600">Aprobados</p>
+    </div>
 
-            {/* Pendientes */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-yellow-300 transition-all duration-200 group cursor-pointer">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 group-hover:scale-110 transition-all">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.pendientes}</h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">Pendientes</p>
-            </div>
+    {/* Pendientes */}
+    <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-lg hover:border-yellow-300 transition-all duration-200 group">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 group-hover:scale-110 transition-all">
+          <svg className="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-2xl font-bold text-gray-800 mb-1">{stats.pendientes}</h3>
+      <p className="text-sm text-gray-600">Pendientes</p>
+    </div>
 
-            {/* En Proceso */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-200 group cursor-pointer">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 group-hover:scale-110 transition-all">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.enProceso}</h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">En Proceso</p>
-            </div>
+    {/* En Proceso */}
+    <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-200 group">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 group-hover:scale-110 transition-all">
+          <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-2xl font-bold text-gray-800 mb-1">{stats.enProceso}</h3>
+      <p className="text-sm text-gray-600">En Proceso</p>
+    </div>
 
-            {/* Rechazados */}
-            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-red-300 transition-all duration-200 group cursor-pointer col-span-2 sm:col-span-3 lg:col-span-1">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 group-hover:scale-110 transition-all">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.rechazados}</h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">Rechazados</p>
-            </div>
-          </div>
+    {/* Rechazados */}
+    <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-lg hover:border-red-300 transition-all duration-200 group">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 group-hover:scale-110 transition-all">
+          <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-2xl font-bold text-gray-800 mb-1">{stats.rechazados}</h3>
+      <p className="text-sm text-gray-600">Rechazados</p>
+    </div>
+  </div>
         </div>
 
         {/* Filtros */}
