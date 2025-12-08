@@ -180,7 +180,7 @@ export const SolicitudDetallesPage = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
         {/* Información de la Solicitud */}
         <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -205,66 +205,81 @@ export const SolicitudDetallesPage = () => {
           </div>
         </div>
 
-        {/* Estadísticas - Scroll horizontal en móvil */}
-        <div className="mb-4 sm:mb-6 -mx-3 sm:mx-0 px-3 sm:px-0">
-          <div className="flex sm:grid sm:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-            <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200 min-w-[100px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-lg flex items-center justify-center mb-1.5 sm:mb-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
+        {/* Estadísticas - Grid simétrico */}
+        <div className="mb-6 sm:mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            {/* Total */}
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg transition-all duration-200 group cursor-pointer">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 group-hover:scale-110 transition-all">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800">{stats.total}</h3>
-              <p className="text-xs text-gray-600">Total</p>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.total}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Total</p>
             </div>
 
-            <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200 min-w-[100px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-100 rounded-lg flex items-center justify-center mb-1.5 sm:mb-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+            {/* Aprobados */}
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-green-300 transition-all duration-200 group cursor-pointer">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 group-hover:scale-110 transition-all">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800">{stats.aprobados}</h3>
-              <p className="text-xs text-gray-600">Aprobados</p>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.aprobados}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Aprobados</p>
             </div>
 
-            <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200 min-w-[100px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-100 rounded-lg flex items-center justify-center mb-1.5 sm:mb-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            {/* Pendientes */}
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-yellow-300 transition-all duration-200 group cursor-pointer">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 group-hover:scale-110 transition-all">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800">{stats.pendientes}</h3>
-              <p className="text-xs text-gray-600">Pendientes</p>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.pendientes}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Pendientes</p>
             </div>
 
-            <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200 min-w-[100px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-orange-100 rounded-lg flex items-center justify-center mb-1.5 sm:mb-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+            {/* En Proceso */}
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-200 group cursor-pointer">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 group-hover:scale-110 transition-all">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800">{stats.enProceso}</h3>
-              <p className="text-xs text-gray-600">En Proceso</p>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.enProceso}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">En Proceso</p>
             </div>
 
-            <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-200 min-w-[100px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-red-100 rounded-lg flex items-center justify-center mb-1.5 sm:mb-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+            {/* Rechazados */}
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-red-300 transition-all duration-200 group cursor-pointer col-span-2 sm:col-span-3 lg:col-span-1">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 group-hover:scale-110 transition-all">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800">{stats.rechazados}</h3>
-              <p className="text-xs text-gray-600">Rechazados</p>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{stats.rechazados}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Rechazados</p>
             </div>
           </div>
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -272,14 +287,14 @@ export const SolicitudDetallesPage = () => {
                 placeholder="Buscar código o descripción..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
               />
             </div>
 
             <select
               value={tipoFilter}
               onChange={(e) => setTipoFilter(e.target.value)}
-              className="px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
             >
               <option value="todos">Todos los tipos</option>
               <option value="Productos">Productos</option>
@@ -291,7 +306,7 @@ export const SolicitudDetallesPage = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
             >
               <option value="todos">Todos los estados</option>
               <option value="Pendiente">Pendiente</option>
@@ -304,19 +319,19 @@ export const SolicitudDetallesPage = () => {
         </div>
 
         {/* Desktop Table - Hidden on Mobile */}
-        <div className="hidden lg:block bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="hidden lg:block bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">#</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Código</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Descripción</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tipo</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Cantidad</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Unidad</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Observación</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Descripción</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tipo</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Cantidad</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Unidad</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Observación</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -326,23 +341,23 @@ export const SolicitudDetallesPage = () => {
                   
                   return (
                     <tr key={item.linea} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-gray-600 font-medium">{item.linea}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-700">{item.codigo}</td>
-                      <td className="px-4 py-3 text-gray-800 max-w-xs">{item.descripcion}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${tipoConfig.bg} ${tipoConfig.text}`}>
+                      <td className="px-6 py-4 text-gray-600 font-medium">{item.linea}</td>
+                      <td className="px-6 py-4 font-mono text-xs text-gray-700">{item.codigo}</td>
+                      <td className="px-6 py-4 text-gray-800 max-w-xs">{item.descripcion}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${tipoConfig.bg} ${tipoConfig.text}`}>
                           {item.tipo}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-gray-800">{item.cantidad}</td>
-                      <td className="px-4 py-3 text-gray-600">{item.unidad}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 text-right font-semibold text-gray-800">{item.cantidad}</td>
+                      <td className="px-6 py-4 text-gray-600">{item.unidad}</td>
+                      <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig.bg} ${statusConfig.text}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.badge}`}></span>
                           {item.estado}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs max-w-xs truncate" title={item.observacion}>
+                      <td className="px-6 py-4 text-gray-600 text-xs max-w-xs truncate" title={item.observacion}>
                         {item.observacion || '-'}
                       </td>
                     </tr>
@@ -353,7 +368,7 @@ export const SolicitudDetallesPage = () => {
           </div>
 
           {currentItems.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-16">
               <svg className="mx-auto w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
@@ -363,39 +378,39 @@ export const SolicitudDetallesPage = () => {
         </div>
 
         {/* Mobile/Tablet Cards - Hidden on Desktop */}
-        <div className="lg:hidden space-y-3">
+        <div className="lg:hidden space-y-4">
           {currentItems.map((item) => {
             const statusConfig = getStatusConfig(item.estado);
             const tipoConfig = getTipoConfig(item.tipo);
             
             return (
-              <div key={item.linea} className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+              <div key={item.linea} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all">
                 {/* Header del Card */}
-                <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-600">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <span className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-bold text-gray-600">
                       {item.linea}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="font-mono text-xs text-gray-500">{item.codigo}</p>
-                      <p className="text-sm font-medium text-gray-800 line-clamp-2">{item.descripcion}</p>
+                      <p className="font-mono text-xs text-gray-500 mb-1">{item.codigo}</p>
+                      <p className="text-sm sm:text-base font-medium text-gray-800 line-clamp-2">{item.descripcion}</p>
                     </div>
                   </div>
-                  <span className={`flex-shrink-0 px-2 py-0.5 rounded text-xs font-medium ${tipoConfig.bg} ${tipoConfig.text}`}>
+                  <span className={`flex-shrink-0 px-2.5 py-1 rounded text-xs font-medium ${tipoConfig.bg} ${tipoConfig.text}`}>
                     {item.tipo}
                   </span>
                 </div>
 
                 {/* Info Row */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs mb-2 sm:mb-3">
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm mb-3">
+                  <div className="flex items-center gap-1.5 text-gray-600">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
                     </svg>
                     <span className="font-semibold text-gray-800">{item.cantidad}</span>
                     <span className="text-gray-500">{item.unidad}</span>
                   </div>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusConfig.bg} ${statusConfig.text}`}>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusConfig.bg} ${statusConfig.text}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.badge}`}></span>
                     {item.estado}
                   </span>
@@ -403,9 +418,9 @@ export const SolicitudDetallesPage = () => {
 
                 {/* Observación */}
                 {item.observacion && (
-                  <div className="pt-2 sm:pt-3 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 mb-0.5">Observación:</p>
-                    <p className="text-xs text-gray-700 line-clamp-2">{item.observacion}</p>
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 mb-1 font-medium">Observación:</p>
+                    <p className="text-sm text-gray-700 line-clamp-2">{item.observacion}</p>
                   </div>
                 )}
               </div>
@@ -414,45 +429,38 @@ export const SolicitudDetallesPage = () => {
 
           {/* Empty State - Mobile */}
           {currentItems.length === 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <svg className="mx-auto w-12 h-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-sm">
+              <svg className="mx-auto w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
-              <p className="text-gray-500 text-sm">No se encontraron ítems</p>
+              <p className="text-gray-500">No se encontraron ítems</p>
             </div>
           )}
         </div>
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl border border-gray-200 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 mt-4 gap-3">
-            <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
-              <span className="hidden sm:inline">Mostrando </span>
-              {startIndex + 1} - {Math.min(endIndex, filteredItems.length)} de {filteredItems.length}
+          <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl border border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 mt-6 sm:mt-8 gap-4 shadow-sm">
+            <div className="text-sm text-gray-600 text-center sm:text-left">
+              Mostrando <span className="font-semibold">{startIndex + 1}</span> - <span className="font-semibold">{Math.min(endIndex, filteredItems.length)}</span> de <span className="font-semibold">{filteredItems.length}</span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="p-2 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <svg className="w-4 h-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                <span className="hidden sm:inline">Anterior</span>
+                Anterior
               </button>
-              <span className="text-xs sm:text-sm text-gray-600 px-2">
+              <span className="text-sm text-gray-600 px-3 py-2 bg-gray-50 rounded-lg font-medium">
                 {currentPage} / {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="p-2 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <svg className="w-4 h-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                <span className="hidden sm:inline">Siguiente</span>
+                Siguiente
               </button>
             </div>
           </div>

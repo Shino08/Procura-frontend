@@ -96,7 +96,7 @@ export const LoginPage = () => {
       <div className="bg-white/95 backdrop-blur-sm sm:rounded-3xl shadow-2xl overflow-hidden w-full max-w-7xl flex flex-col lg:flex-row h-screen sm:h-auto sm:min-h-[90vh] lg:min-h-[85vh] relative z-10 hover:shadow-orange-200/50 transition-all duration-500">
 
         {/* Panel Izquierdo - Solo visible en desktop */}
-        <div className="hidden lg:flex bg-gradient-to-br from-[#f15a29] via-[#f15a29] to-[#f15a29] text-white p-8 lg:p-12 lg:w-[45%] flex-col justify-between relative overflow-hidden">
+        <div className="hidden lg:flex bg-[#f15a29] text-white p-8 lg:p-12 lg:w-[45%] flex-col justify-between relative overflow-hidden">
           {/* Patrón decorativo de fondo */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 right-10 w-32 h-32 border-4 border-white rounded-full animate-float"></div>
