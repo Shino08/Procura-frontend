@@ -41,7 +41,7 @@ export const router = createBrowserRouter([
                 element: <SolicitudesPage />
             },
             {
-                path: "solicitudes/lista/:id",
+                path: "solicitudes/lista/:fileId",
                 element: <SolicitudDetallesPage />
             },
             {

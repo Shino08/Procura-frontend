@@ -10,68 +10,71 @@ export const SolicitudesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const [solicitudes, setSolicitudes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const [archivos, setArchivos] = useState([]);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState(null);
 
-    useEffect(() => {
-    const fetchMyUploads = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+useEffect(() => {
+  const fetchArchivos = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token');
 
-        const res = await fetch('http://localhost:3000/api/uploads/user', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const res = await fetch('http://localhost:3000/api/uploads/files', {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      });
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || errData.message || 'Error al obtener mis solicitudes');
-        }
-
-        const data = await res.json();
-
-        const mapped = data.uploads.map((u, index) => ({
-          id: `SOL-${String(u.id).padStart(4, '0')}`, // N° solicitud visible
-          fecha: u.created_at,
-          nombreArchivo: u.original_name,
-          totalItems: u.total_items || 0, // cuando tengas conteo real, ajusta
-          observaciones: `Estado: ${u.status}`,
-          filePath: u.file_path,
-          uploadId: u.id,
-        }));
-
-        setSolicitudes(mapped);
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(
+          errData.error || errData.message || 'Error al obtener los archivos'
+        );
       }
-    };
 
-    fetchMyUploads();
-  }, []);
+      const data = await res.json(); // aquí viene directamente el array de rows
 
-    const filteredSolicitudes = solicitudes.filter(sol => {
+      const mapped = data.map((f) => ({
+        id: `ARC-${String(f.id).padStart(4, '0')}`, // ID visible
+        fecha: f.created_at,
+        nombreArchivo: f.source_file,               // nombre del archivo subido
+        nombreApi: f.name,                          // nombre lógico/api
+        totalSolicitudes: f.total_sheets || 0,
+        totalItems: f.total_materials || 0,
+        fileId: f.id,                               // id real en BD
+      }));
+
+      setArchivos(mapped);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchArchivos();
+}, []);
+
+
+    const filteredArchivos = archivos.filter(sol => {
     const matchesSearch = sol.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          sol.nombreArchivo.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
   // Paginación
-  const totalPages = Math.ceil(filteredSolicitudes.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredArchivos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentSolicitudes = filteredSolicitudes.slice(startIndex, endIndex);
+  const currentArchivos = filteredArchivos.slice(startIndex, endIndex);
 
-  const handleViewDetails = (solicitudId) => {
-    navigate(`/solicitudes/lista/${solicitudId}`);
-  };
+const handleViewDetails = (fileId) => {
+  navigate(`/solicitudes/lista/${fileId}`); // NO sol.id formateado
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
@@ -142,8 +145,8 @@ export const SolicitudesPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {currentSolicitudes.map((solicitud) => (
-                <tr key={solicitud.id} className="hover:bg-gray-50 transition-colors">
+              {currentArchivos.map((archivo) => (
+                <tr key={archivo.fileId} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
@@ -151,7 +154,7 @@ export const SolicitudesPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
-                      <span className="font-semibold text-gray-800 text-sm">{solicitud.id}</span>
+                      <span className="font-semibold text-gray-800 text-sm">{archivo.id}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -159,13 +162,13 @@ export const SolicitudesPage = () => {
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
-                      <p className="text-sm text-gray-700 truncate" title={solicitud.nombreArchivo}>
-                        {solicitud.nombreArchivo}
+                      <p className="text-sm text-gray-700 truncate" title={archivo.nombreArchivo}>
+                        {archivo.nombreArchivo}
                       </p>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(solicitud.fecha).toLocaleDateString('es-ES', { 
+                    {new Date(archivo.fecha).toLocaleDateString('es-ES', { 
                       day: '2-digit', 
                       month: 'short', 
                       year: 'numeric' 
@@ -173,12 +176,12 @@ export const SolicitudesPage = () => {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className="inline-flex items-center justify-center px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-                      {solicitud.totalItems}
+                      {archivo.totalItems}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button
-                      onClick={() => handleViewDetails(solicitud.id)}
+                      onClick={() => handleViewDetails(archivo.fileId)}
                       className="text-orange-600 hover:text-orange-700 font-medium text-sm"
                     >
                       Ver detalles
@@ -189,7 +192,7 @@ export const SolicitudesPage = () => {
             </tbody>
           </table>
 
-          {currentSolicitudes.length === 0 && (
+          {currentArchivos.length === 0 && (
             <div className="text-center py-12">
               <svg className="mx-auto w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -201,8 +204,8 @@ export const SolicitudesPage = () => {
 
         {/* Cards Mobile */}
         <div className="md:hidden space-y-3">
-          {currentSolicitudes.map((solicitud) => (
-            <div key={solicitud.id} className="bg-white rounded-xl border border-gray-200 p-4">
+          {currentArchivos.map((archivo) => (
+            <div key={archivo.id} className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
@@ -211,9 +214,9 @@ export const SolicitudesPage = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-800 text-sm">{solicitud.id}</p>
+                    <p className="font-semibold text-gray-800 text-sm">{archivo.id}</p>
                     <p className="text-xs text-gray-500">
-                      {new Date(solicitud.fecha).toLocaleDateString('es-ES', { 
+                      {new Date(archivo.fecha).toLocaleDateString('es-ES', { 
                         day: '2-digit', 
                         month: 'short', 
                         year: 'numeric' 
@@ -222,7 +225,7 @@ export const SolicitudesPage = () => {
                   </div>
                 </div>
                 <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                  {solicitud.totalItems} ítems
+                  {archivo.totalItems} ítems
                 </span>
               </div>
 
@@ -230,16 +233,17 @@ export const SolicitudesPage = () => {
                 <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                <p className="text-sm text-gray-700 truncate">{solicitud.nombreArchivo}</p>
+                <p className="text-sm text-gray-700 truncate">{archivo.nombreArchivo}</p>
               </div>
 
               <div className="flex items-center justify-end pt-3 border-t border-gray-200">
-                <button
-                  onClick={() => handleViewDetails(solicitud.id)}
-                  className="text-orange-600 hover:text-orange-700 font-medium text-sm"
-                >
-                  Ver detalles →
-                </button>
+<button
+  onClick={() => handleViewDetails(archivo.fileId)}
+  className="text-orange-600 hover:text-orange-700 font-medium text-sm"
+>
+  Ver detalles →
+</button>
+
               </div>
             </div>
           ))}
@@ -248,9 +252,10 @@ export const SolicitudesPage = () => {
         {/* Paginación */}
         {totalPages > 1 && (
           <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl border border-gray-200 px-4 sm:px-6 py-4 mt-4 gap-3">
-            <div className="text-sm text-gray-600">
-              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredSolicitudes.length)} de {filteredSolicitudes.length} solicitudes
-            </div>
+<div className="text-sm text-gray-600">
+  Mostrando {startIndex + 1} a {Math.min(endIndex, filteredArchivos.length)} de {filteredArchivos.length} solicitudes
+</div>
+
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
