@@ -13,6 +13,10 @@ export const DashboardPage = () => {
   const [notificacionesOpen, setNotificacionesOpen] = useState(false);
   const { notificacionesNoLeidas, actualizarContador } = useNotificaciones();
 
+  const [solicitudesRecientes, setSolicitudesRecientes] = useState([]);
+  const [loadingSolicitudes, setLoadingSolicitudes] = useState(false);
+  const [errorSolicitudes, setErrorSolicitudes] = useState(null);
+
   useEffect(() => {
     // Obtener datos del usuario desde el token JWT
     const token = localStorage.getItem('token');
@@ -35,6 +39,72 @@ export const DashboardPage = () => {
       setUserRole(role);
     }
   }, [navigate]);
+
+  useEffect(() => {
+  const token = localStorage.getItem('token');
+  const userEmail = localStorage.getItem('userEmail');
+  const role = localStorage.getItem('userRole');
+
+  if (!token) {
+    navigate('/login');
+    return;
+  }
+
+  if (userEmail) {
+    const name = userEmail.split('@')[0];
+    setUserName(name.charAt(0).toUpperCase() + name.slice(1));
+  }
+  if (role) setUserRole(role);
+
+  const fetchSolicitudes = async () => {
+    try {
+      setLoadingSolicitudes(true);
+      setErrorSolicitudes(null);
+
+      const endpoint =
+        (role || userRole) === 'admin'
+          ? 'http://localhost:3000/api/uploads'          // todos
+          : 'http://localhost:3000/api/uploads/files';    // solo del usuario
+
+      const res = await fetch(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error(`Error ${res.status} al cargar solicitudes: ${txt}`);
+      }
+
+      const data = await res.json();
+
+      // Ajusta este mapeo al JSON real de tu backend
+      const mapped = data.map((row) => ({
+        id: row.id_formateado,
+        fileId: row.id,
+        cliente: row.user_name || row.cliente || userName,
+        archivo: row.source_file || row.archivo || 'Sin nombre',
+        items: row.total_materials || row.items || 0,
+        estado: row.estado || 'Pendiente',
+        fecha: new Date(row.created_at).toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        }),
+        progreso: row.progreso || 0,
+      }));
+
+      setSolicitudesRecientes(mapped);
+    } catch (err) {
+      console.error(err);
+      setErrorSolicitudes(err.message);
+    } finally {
+      setLoadingSolicitudes(false);
+    }
+  };
+
+  fetchSolicitudes();
+}, [navigate]);
+
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -111,82 +181,7 @@ export const DashboardPage = () => {
 
   const stats = userRole === 'admin' ? statsAdmin : statsCliente;
 
-  // Solicitudes recientes según rol
-  const solicitudesCliente = [
-    { 
-      id: 'SOL-2025-001', 
-      archivo: 'solicitud_proyecto_norte.xlsx', 
-      items: 156,
-      estado: 'Aprobada', 
-      fecha: '27 Nov 2025',
-      progreso: 100
-    },
-    { 
-      id: 'SOL-2025-002', 
-      archivo: 'mantenimiento_preventivo.csv', 
-      items: 89,
-      estado: 'En Proceso', 
-      fecha: '26 Nov 2025',
-      progreso: 65
-    },
-    { 
-      id: 'SOL-2025-003', 
-      archivo: 'reposicion_stock.xlsx', 
-      items: 234,
-      estado: 'Pendiente', 
-      fecha: '25 Nov 2025',
-      progreso: 0
-    },
-    { 
-      id: 'SOL-2025-004', 
-      archivo: 'equipamiento_obra_sur.xlsx', 
-      items: 67,
-      estado: 'Completada', 
-      fecha: '24 Nov 2025',
-      progreso: 100
-    },
-  ];
-
-  const solicitudesAdmin = [
-    { 
-      id: 'SOL-2025-006', 
-      cliente: 'Juan Pérez',
-      archivo: 'suministros_diciembre.xlsx', 
-      items: 145,
-      estado: 'En Revisión', 
-      fecha: '28 Nov 2025',
-      progreso: 45
-    },
-    { 
-      id: 'SOL-2025-005', 
-      cliente: 'María González',
-      archivo: 'sistema_contraincendios.csv', 
-      items: 312,
-      estado: 'Pendiente', 
-      fecha: '27 Nov 2025',
-      progreso: 20
-    },
-    { 
-      id: 'SOL-2025-004', 
-      cliente: 'Carlos Ramírez',
-      archivo: 'equipamiento_obra.xlsx', 
-      items: 67,
-      estado: 'Aprobada', 
-      fecha: '26 Nov 2025',
-      progreso: 100
-    },
-    { 
-      id: 'SOL-2025-003', 
-      cliente: 'Ana Torres',
-      archivo: 'materiales_construccion.xlsx', 
-      items: 234,
-      estado: 'En Proceso', 
-      fecha: '25 Nov 2025',
-      progreso: 75
-    },
-  ];
-
-  const solicitudesRecientes = userRole === 'admin' ? solicitudesAdmin : solicitudesCliente;
+  // const solicitudRecientes = userRole === 'admin' ? solicitudRecientesAdmin : solicitudRecientesCliente;
 
   const renderIcon = (iconName, className = "w-5 h-5 sm:w-6 sm:h-6") => {
     const icons = {
@@ -451,12 +446,21 @@ export const DashboardPage = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {solicitudesRecientes.map((solicitud, index) => {
-                  const estadoConfig = getEstadoConfig(solicitud.estado);
+<tbody className="divide-y divide-gray-200">
+  {solicitudesRecientes.slice(0, 5).map((solicitud, index) => {
+    const estadoConfig = getEstadoConfig(solicitud.estado);
 
-                  return (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors duration-200">
+    const detallePath =
+      userRole === 'admin'
+        ? `/solicitudes/gestion/${solicitud.id}`
+        : `/solicitudes/lista/${solicitud.fileId}`;
+
+    return (
+      <tr
+        key={index}
+        onClick={() => navigate(detallePath)}
+        className="hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+      >
                       <td className="px-4 lg:px-6 py-3 lg:py-4">
                         <div className="flex items-center gap-2 sm:gap-3">
                           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -493,7 +497,7 @@ export const DashboardPage = () => {
                       <td className="px-4 lg:px-6 py-3 lg:py-4 text-xs sm:text-sm text-gray-600 whitespace-nowrap">{solicitud.fecha}</td>
                       <td className="px-4 lg:px-6 py-3 lg:py-4 text-right">
                         <Link
-                          to={userRole === 'admin' ? `/solicitudes/gestion/${solicitud.id}` : `/solicitudes/lista/${solicitud.id}`}
+                          to={userRole === 'admin' ? `/solicitudes/gestion/${solicitud.id}` : `/solicitudes/lista/${solicitud.id_formateado}`}
                           className="text-xs sm:text-sm font-medium text-orange-600 hover:text-orange-700 flex items-center justify-end gap-1 transition-all duration-200 hover:scale-105"
                         >
                           Ver
@@ -511,7 +515,7 @@ export const DashboardPage = () => {
 
           {/* Tablet View - Medium */}
           <div className="hidden md:block lg:hidden divide-y divide-gray-200">
-            {solicitudesRecientes.map((solicitud, index) => {
+            {solicitudesRecientes.slice(0, 5).map((solicitud, index) => {
               const estadoConfig = getEstadoConfig(solicitud.estado);
 
               return (
@@ -556,7 +560,7 @@ export const DashboardPage = () => {
 
           {/* Mobile Cards - Enhanced */}
           <div className="md:hidden divide-y divide-gray-200">
-            {solicitudesRecientes.map((solicitud, index) => {
+            {solicitudesRecientes.slice(0, 5).map((solicitud, index) => {
               const estadoConfig = getEstadoConfig(solicitud.estado);
 
               return (
