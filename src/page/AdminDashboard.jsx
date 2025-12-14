@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { NotificacionesPanel } from "../components/NotificacionesPanel";
 import { useNotificaciones } from "../hooks/useNotifications";
 import { DashboardHeader } from "../components/DashboardHeader";
+import { SolicitudesRecientes } from "../components/SolicitudesRecientes";
 
 export const AdminDashboard = ({ token, userName }) => {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export const AdminDashboard = ({ token, userName }) => {
 
   const quickActions = useMemo(
     () => [
-      { title: "Gestionar Solicitudes", description: "Revisar y aprobar", link: "/solicitudes/gestion", primary: true },
+      { title: "Gestionar Solicitudes", description: "Revisar y aprobar", link: "/solicitudes/admin", primary: true },
       { title: "Reportes Generales", description: "Análisis de datos", link: "/reportes", primary: false },
     ],
     []
@@ -60,7 +61,7 @@ export const AdminDashboard = ({ token, userName }) => {
         </div>
 
         {/* Aquí renderiza el componente "SolicitudesRecientes" SOLO con vista admin */}
-        {/* <SolicitudesRecientes token={token} role="admin" /> */}
+        <SolicitudesRecientes token={token} role="admin" />
       </main>
 
       <NotificacionesPanel

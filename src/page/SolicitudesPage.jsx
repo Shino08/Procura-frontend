@@ -4,24 +4,12 @@ import { Link, useNavigate } from "react-router-dom";
 
 const ITEMS_PER_PAGE = 10;
 
-const formatSolicitudId = (id) => `ARC-${String(id).padStart(4, "0")}`;
-
 const formatFecha = (fecha) =>
   new Date(fecha).toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
-
-const mapArchivo = (f) => ({
-  fileId: f.id,
-  id: formatSolicitudId(f.id),
-  fecha: f.created_at,
-  nombreArchivo: f.source_file,
-  nombreApi: f.name,
-  totalSolicitudes: f.total_sheets || 0,
-  totalItems: f.total_materials || 0,
-});
 
 export const SolicitudesPage = () => {
   const navigate = useNavigate();
@@ -42,7 +30,7 @@ export const SolicitudesPage = () => {
         setError("");
 
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:3000/api/uploads/files", {
+        const res = await fetch("http://localhost:3000/api/archivos/usuario", {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
           signal: controller.signal,
         });
@@ -53,7 +41,7 @@ export const SolicitudesPage = () => {
         }
 
         const data = await res.json();
-        setArchivos(Array.isArray(data) ? data.map(mapArchivo) : []);
+        setArchivos(Array.isArray(data?.archivos) ? data.archivos : []);
       } catch (e) {
         if (e.name !== "AbortError") setError(e.message || "Error inesperado");
       } finally {
@@ -71,7 +59,7 @@ export const SolicitudesPage = () => {
     const filtered = term
       ? archivos.filter((a) => {
           const idMatch = a.id.toLowerCase().includes(term);
-          const fileMatch = (a.nombreArchivo || "").toLowerCase().includes(term);
+          const fileMatch = (a.nombre || "").toLowerCase().includes(term);
           return idMatch || fileMatch;
         })
       : archivos;
@@ -91,7 +79,7 @@ export const SolicitudesPage = () => {
     };
   }, [archivos, searchTerm, currentPage]);
 
-  const handleViewDetails = (fileId) => navigate(`/solicitudes/lista/${fileId}`);
+  const handleViewDetails = (id) => navigate(`/solicitudes/lista/${id}`);
 
   const onSearchChange = (value) => {
     setSearchTerm(value);
@@ -192,7 +180,7 @@ export const SolicitudesPage = () => {
 
               <tbody className="divide-y divide-gray-200">
                 {currentItems.map((a) => (
-                  <tr key={a.fileId} className="hover:bg-gray-50">
+                  <tr key={a.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-orange-100 to-orange-200">
@@ -213,23 +201,23 @@ export const SolicitudesPage = () => {
                             d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                           />
                         </svg>
-                        <p className="truncate text-sm text-gray-700" title={a.nombreArchivo}>
-                          {a.nombreArchivo}
+                        <p className="truncate text-sm text-gray-700" title={a.nombre}>
+                          {a.nombre}
                         </p>
                       </div>
                     </td>
 
-                    <td className="px-6 py-4 text-sm text-gray-600">{formatFecha(a.fecha)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{formatFecha(a.fechaCreacion)}</td>
 
                     <td className="px-6 py-4 text-center">
                       <span className="inline-flex items-center justify-center rounded-full bg-purple-100 px-3 py-1 text-sm font-semibold text-purple-700">
-                        {a.totalItems}
+                        {a.totalHojas}
                       </span>
                     </td>
 
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => handleViewDetails(a.fileId)}
+                        onClick={() => handleViewDetails(a.id)}
                         className="text-sm font-semibold text-orange-600 hover:text-orange-700"
                       >
                         Ver detalles
@@ -246,7 +234,7 @@ export const SolicitudesPage = () => {
         {!loading && !error && currentItems.length > 0 && (
           <div className="space-y-3 md:hidden">
             {currentItems.map((a) => (
-              <div key={a.fileId} className="rounded-xl border border-gray-200 bg-white p-4">
+              <div key={a.id} className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-orange-100 to-orange-200">
@@ -264,7 +252,7 @@ export const SolicitudesPage = () => {
                   </div>
 
                   <span className="shrink-0 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">
-                    {a.totalItems} ítems
+                    {a.totalHojas} ítems
                   </span>
                 </div>
 
@@ -274,12 +262,12 @@ export const SolicitudesPage = () => {
                       d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                     />
                   </svg>
-                  <p className="truncate text-sm text-gray-700">{a.nombreArchivo}</p>
+                  <p className="truncate text-sm text-gray-700">{a.nombre}</p>
                 </div>
 
                 <div className="mt-3 flex justify-end border-t border-gray-200 pt-3">
                   <button
-                    onClick={() => handleViewDetails(a.fileId)}
+                    onClick={() => handleViewDetails(a.id)}
                     className="text-sm font-semibold text-orange-600 hover:text-orange-700"
                   >
                     Ver detalles →

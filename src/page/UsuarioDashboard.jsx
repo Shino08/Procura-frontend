@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { NotificacionesPanel } from "../components/NotificacionesPanel";
 import { useNotificaciones } from "../hooks/useNotifications";
 import { DashboardHeader } from "../components/DashboardHeader";
+import { SolicitudesRecientes } from "../components/SolicitudesRecientes";
 
 export const UsuarioDashboard = ({ token, userName }) => {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
         </div>
 
         {/* Aquí renderiza el componente "SolicitudesRecientes" SOLO con vista cliente */}
-        {/* <SolicitudesRecientes token={token} role="cliente" userName={userName} /> */}
+        <SolicitudesRecientes token={token} role="cliente" endpoint="http://localhost:3000/api/archivos/usuario" verTodasLink="/solicitudes/usuario" />
       </main>
 
       <NotificacionesPanel
