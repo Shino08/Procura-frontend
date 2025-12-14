@@ -1,107 +1,131 @@
 // src/page/SolicitudesPage.jsx
-import { useEffect } from 'react';
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+const ITEMS_PER_PAGE = 10;
+
+const formatSolicitudId = (id) => `ARC-${String(id).padStart(4, "0")}`;
+
+const formatFecha = (fecha) =>
+  new Date(fecha).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+const mapArchivo = (f) => ({
+  fileId: f.id,
+  id: formatSolicitudId(f.id),
+  fecha: f.created_at,
+  nombreArchivo: f.source_file,
+  nombreApi: f.name,
+  totalSolicitudes: f.total_sheets || 0,
+  totalItems: f.total_materials || 0,
+});
 
 export const SolicitudesPage = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('todos');
+
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
-const [archivos, setArchivos] = useState([]);
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState(null);
+  const [archivos, setArchivos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-useEffect(() => {
-  const fetchArchivos = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    const controller = new AbortController();
 
-      const token = localStorage.getItem('token');
+    const fetchArchivos = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-      const res = await fetch('http://localhost:3000/api/uploads/files', {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-      });
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:3000/api/uploads/files", {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          signal: controller.signal,
+        });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(
-          errData.error || errData.message || 'Error al obtener los archivos'
-        );
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || "Error al obtener los archivos");
+        }
+
+        const data = await res.json();
+        setArchivos(Array.isArray(data) ? data.map(mapArchivo) : []);
+      } catch (e) {
+        if (e.name !== "AbortError") setError(e.message || "Error inesperado");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const data = await res.json(); // aquí viene directamente el array de rows
+    fetchArchivos();
+    return () => controller.abort();
+  }, []);
 
-      const mapped = data.map((f) => ({
-        id: `ARC-${String(f.id).padStart(4, '0')}`, // ID visible
-        fecha: f.created_at,
-        nombreArchivo: f.source_file,               // nombre del archivo subido
-        nombreApi: f.name,                          // nombre lógico/api
-        totalSolicitudes: f.total_sheets || 0,
-        totalItems: f.total_materials || 0,
-        fileId: f.id,                               // id real en BD
-      }));
+  const { filtered, totalPages, currentItems, startIndex, endIndex } = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
 
-      setArchivos(mapped);
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    const filtered = term
+      ? archivos.filter((a) => {
+          const idMatch = a.id.toLowerCase().includes(term);
+          const fileMatch = (a.nombreArchivo || "").toLowerCase().includes(term);
+          return idMatch || fileMatch;
+        })
+      : archivos;
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+
+    const startIndex = (safePage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+
+    return {
+      filtered,
+      totalPages,
+      currentItems: filtered.slice(startIndex, endIndex),
+      startIndex,
+      endIndex,
+    };
+  }, [archivos, searchTerm, currentPage]);
+
+  const handleViewDetails = (fileId) => navigate(`/solicitudes/lista/${fileId}`);
+
+  const onSearchChange = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
   };
-
-  fetchArchivos();
-}, []);
-
-
-    const filteredArchivos = archivos.filter(sol => {
-    const matchesSearch = sol.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.nombreArchivo.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
-
-  // Paginación
-  const totalPages = Math.ceil(filteredArchivos.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentArchivos = filteredArchivos.slice(startIndex, endIndex);
-
-const handleViewDetails = (fileId) => {
-  navigate(`/solicitudes/lista/${fileId}`); // NO sol.id formateado
-};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur shadow-sm">
+        <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8">
+          <div className="flex h-14 items-center justify-between sm:h-16">
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                aria-label="Volver al dashboard"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
+
               <div>
-                <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">Mis Solicitudes</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Historial de archivos cargados</p>
+                <h1 className="text-base font-bold text-gray-800 sm:text-lg lg:text-xl">Mis Solicitudes</h1>
+                <p className="hidden text-xs text-gray-500 sm:block">Historial de archivos cargados</p>
               </div>
             </div>
-            
-            <Link 
+
+            <Link
               to="/solicitudes/nueva"
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/30 text-sm font-semibold"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition hover:from-orange-600 hover:to-orange-700 sm:px-4"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <span className="hidden sm:inline">Cargar Solicitud</span>
@@ -111,176 +135,196 @@ const handleViewDetails = (fileId) => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Filtros y Búsqueda */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Buscar por número o nombre de archivo..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
-                />
-              </div>
-            </div>
+      <main className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Search */}
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar por número o nombre de archivo..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-transparent focus:ring-2 focus:ring-orange-500"
+            />
           </div>
         </div>
 
-        {/* Tabla Desktop */}
-        <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">N° Solicitud</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Archivo</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Fecha Carga</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Ítems</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {currentArchivos.map((archivo) => (
-                <tr key={archivo.fileId} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <span className="font-semibold text-gray-800 text-sm">{archivo.id}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 max-w-xs">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-sm text-gray-700 truncate" title={archivo.nombreArchivo}>
-                        {archivo.nombreArchivo}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(archivo.fecha).toLocaleDateString('es-ES', { 
-                      day: '2-digit', 
-                      month: 'short', 
-                      year: 'numeric' 
-                    })}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center justify-center px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-                      {archivo.totalItems}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleViewDetails(archivo.fileId)}
-                      className="text-orange-600 hover:text-orange-700 font-medium text-sm"
-                    >
-                      Ver detalles
-                    </button>
-                  </td>
+        {/* Estados */}
+        {loading && (
+          <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">
+            Cargando solicitudes...
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="rounded-xl border border-red-200 bg-white p-6 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && currentItems.length === 0 && (
+          <div className="rounded-xl border border-gray-200 bg-white p-10 text-center">
+            <svg className="mx-auto mb-4 h-14 w-14 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <p className="text-gray-500">No se encontraron solicitudes</p>
+          </div>
+        )}
+
+        {/* Tabla md+ */}
+        {!loading && !error && currentItems.length > 0 && (
+          <div className="hidden md:block overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <table className="w-full">
+              <thead className="border-b border-gray-200 bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-600">N° Solicitud</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-600">Archivo</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-600">Fecha</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold uppercase text-gray-600">Ítems</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold uppercase text-gray-600">Acción</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
 
-          {currentArchivos.length === 0 && (
-            <div className="text-center py-12">
-              <svg className="mx-auto w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p className="text-gray-500">No se encontraron solicitudes</p>
-            </div>
-          )}
-        </div>
+              <tbody className="divide-y divide-gray-200">
+                {currentItems.map((a) => (
+                  <tr key={a.fileId} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-orange-100 to-orange-200">
+                          <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-800">{a.id}</span>
+                      </div>
+                    </td>
 
-        {/* Cards Mobile */}
-        <div className="md:hidden space-y-3">
-          {currentArchivos.map((archivo) => (
-            <div key={archivo.id} className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                    <td className="px-6 py-4">
+                      <div className="flex max-w-xs items-center gap-2">
+                        <svg className="h-4 w-4 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <p className="truncate text-sm text-gray-700" title={a.nombreArchivo}>
+                          {a.nombreArchivo}
+                        </p>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-sm text-gray-600">{formatFecha(a.fecha)}</td>
+
+                    <td className="px-6 py-4 text-center">
+                      <span className="inline-flex items-center justify-center rounded-full bg-purple-100 px-3 py-1 text-sm font-semibold text-purple-700">
+                        {a.totalItems}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => handleViewDetails(a.fileId)}
+                        className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+                      >
+                        Ver detalles
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Cards mobile */}
+        {!loading && !error && currentItems.length > 0 && (
+          <div className="space-y-3 md:hidden">
+            {currentItems.map((a) => (
+              <div key={a.fileId} className="rounded-xl border border-gray-200 bg-white p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-orange-100 to-orange-200">
+                      <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-gray-800">{a.id}</p>
+                      <p className="text-xs text-gray-500">{formatFecha(a.fecha)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm">{archivo.id}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(archivo.fecha).toLocaleDateString('es-ES', { 
-                        day: '2-digit', 
-                        month: 'short', 
-                        year: 'numeric' 
-                      })}
-                    </p>
-                  </div>
+
+                  <span className="shrink-0 rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">
+                    {a.totalItems} ítems
+                  </span>
                 </div>
-                <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                  {archivo.totalItems} ítems
-                </span>
-              </div>
 
-              <div className="flex items-center gap-2 mb-3">
-                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <p className="text-sm text-gray-700 truncate">{archivo.nombreArchivo}</p>
-              </div>
+                <div className="flex items-center gap-2">
+                  <svg className="h-4 w-4 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <p className="truncate text-sm text-gray-700">{a.nombreArchivo}</p>
+                </div>
 
-              <div className="flex items-center justify-end pt-3 border-t border-gray-200">
-<button
-  onClick={() => handleViewDetails(archivo.fileId)}
-  className="text-orange-600 hover:text-orange-700 font-medium text-sm"
->
-  Ver detalles →
-</button>
-
+                <div className="mt-3 flex justify-end border-t border-gray-200 pt-3">
+                  <button
+                    onClick={() => handleViewDetails(a.fileId)}
+                    className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+                  >
+                    Ver detalles →
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Paginación */}
-        {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between bg-white rounded-xl border border-gray-200 px-4 sm:px-6 py-4 mt-4 gap-3">
-<div className="text-sm text-gray-600">
-  Mostrando {startIndex + 1} a {Math.min(endIndex, filteredArchivos.length)} de {filteredArchivos.length} solicitudes
-</div>
+        {!loading && !error && filtered.length > 0 && totalPages > 1 && (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="text-sm text-gray-600">
+              Mostrando {startIndex + 1} a {Math.min(endIndex, filtered.length)} de {filtered.length} solicitudes
+            </div>
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Anterior
               </button>
-              {[...Array(totalPages)].map((_, i) => (
+
+              {/* Números solo en sm+ para no romper mobile */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
                 <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`hidden sm:block px-3 py-2 rounded-lg text-sm font-medium ${
-                    currentPage === i + 1
-                      ? 'bg-orange-500 text-white'
-                      : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  key={n}
+                  onClick={() => setCurrentPage(n)}
+                  className={`hidden rounded-lg px-3 py-2 text-sm font-medium sm:block ${
+                    currentPage === n
+                      ? "bg-orange-500 text-white"
+                      : "border border-gray-300 text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  {i + 1}
+                  {n}
                 </button>
               ))}
+
               <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Siguiente
               </button>

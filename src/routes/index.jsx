@@ -37,19 +37,19 @@ export const router = createBrowserRouter([
                 element: <NuevaSolicitudPage />
             },
             {
-                path: "solicitudes/lista",
+                path: "solicitudes/usuario",
                 element: <SolicitudesPage />
             },
             {
-                path: "solicitudes/lista/:fileId",
+                path: "solicitudes/usuario/:fileId",
                 element: <SolicitudDetallesPage />
             },
             {
-                path: "solicitudes/gestion",
+                path: "solicitudes/admin",
                 element: <GestionSolicitudesPage />
             },
             {
-                path: "solicitudes/gestion/:id",
+                path: "solicitudes/admin/:id",
                 element: <GestionSolicitudesDetallesPage />
             },
             {
