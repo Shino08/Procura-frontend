@@ -1,6 +1,7 @@
 // src/page/GestionSolicitudesPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../services";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -30,7 +31,7 @@ export const GestionSolicitudesPage = () => {
         setError("");
 
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:3000/api/archivos", {
+        const res = await fetch(`${API_URL}/archivos`, {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal,
         });

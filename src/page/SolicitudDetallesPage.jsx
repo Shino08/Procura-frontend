@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ApproveConfirmModal } from "../components/solicitudes/ModalConfirm";
-import { ItemDetailsModal } from "../components/solicitudes/ItemDetailsModal";
+import { ModalConfirm } from "../components/ModalConfirm";
+import { ItemDetailsModal } from "../components/ItemDetailsModal";
 import { ITEMS_PER_PAGE, formatArchivoId, formatFecha } from "../utils/solicitudesUi";
+import { API_URL } from "../services";
 
 export const SolicitudDetallesPage = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ export const SolicitudDetallesPage = () => {
         setError("");
 
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:3000/api/archivos/detalles/${fileId}`, {
+        const res = await fetch(`${API_URL}/archivos/detalles/${fileId}`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
           signal: controller.signal,
         });
@@ -465,7 +466,7 @@ export const SolicitudDetallesPage = () => {
         approvingDisabled={false}
       />
 
-      <ApproveConfirmModal
+      <ModalConfirm
         open={confirmOpen}
         item={selectedItem}
         step={approveStep}

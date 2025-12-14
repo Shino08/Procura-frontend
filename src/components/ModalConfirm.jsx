@@ -1,5 +1,5 @@
-import { Modal } from "../ui/Modal";
-import { getStatusCfg } from "../../utils/solicitudesUi";
+import { Modal } from "./Modal";
+import { getStatusCfg } from "../utils/solicitudesUi";
 
 export const ModalConfirm = ({ open, item, step, onCancel, onConfirm }) => {
   if (!open || !item) return null;

@@ -1,5 +1,5 @@
-import { getStatusCfg, getTipoCfg } from "../../utils/solicitudesUi";
-import { Modal } from "../ui/Modal";
+import { getStatusCfg, getTipoCfg } from "../utils/solicitudesUi";
+import { Modal } from "./Modal";
 
 export const ItemDetailsModal = ({
   open,

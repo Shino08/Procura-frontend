@@ -5,6 +5,7 @@ import { NotificacionesPanel } from "../components/NotificacionesPanel";
 import { useNotificaciones } from "../hooks/useNotifications";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { SolicitudesRecientes } from "../components/SolicitudesRecientes";
+import { API_URL } from "../services";
 
 export const UsuarioDashboard = ({ token, userName }) => {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
         </div>
 
         {/* Aquí renderiza el componente "SolicitudesRecientes" SOLO con vista cliente */}
-        <SolicitudesRecientes token={token} role="cliente" endpoint="http://localhost:3000/api/archivos/usuario" verTodasLink="/solicitudes/usuario" />
+        <SolicitudesRecientes token={token} role="cliente" endpoint={`${API_URL}/archivos/usuario`} verTodasLink="/solicitudes/usuario" />
       </main>
 
       <NotificacionesPanel
