@@ -1,11 +1,15 @@
-// src/page/GestionSolicitudDetallesPage.jsx
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ModalConfirm } from "../components/ModalConfirm";
+import { ItemDetailsModal } from "../components/ItemDetailsModal";
+import { ConfirmModal } from "../components/ConfirmModal";
+import { ResultModal } from "../components/ResultModal";
+import { UploadAdjuntosModal } from "../components/UploadAdjuntosModal";
 
-/* ----------------------------- UI helpers ----------------------------- */
+import { API_URL } from "../services";
+import { formatFecha } from "../utils/solicitudesUi";
 
-const STATUS = ["Pendiente", "En Revisión", "Aprobado", "En Proceso", "Rechazado"];
-const TIPOS = ["Productos", "Servicios", "Materiales", "Equipos"];
+/* ----------------------------- UI configs ----------------------------- */
 
 const STATUS_CONFIG = {
   Pendiente: { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500", border: "border-yellow-300" },
@@ -15,20 +19,10 @@ const STATUS_CONFIG = {
   "En Proceso": { bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500", border: "border-orange-300" },
 };
 
-const TIPO_CONFIG = {
-  Productos: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
-  Servicios: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-  Materiales: { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200" },
-  Equipos: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
-};
+const DEFAULT_STATUS = STATUS_CONFIG.Pendiente;
+const getStatusCfg = (estado) => STATUS_CONFIG[estado] || DEFAULT_STATUS;
 
-const getStatusCfg = (estado) => STATUS_CONFIG[estado] || STATUS_CONFIG.Pendiente;
-const getTipoCfg = (tipo) => TIPO_CONFIG[tipo] || TIPO_CONFIG.Productos;
-
-const formatFecha = (iso) =>
-  new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
-
-const clone = (obj) => JSON.parse(JSON.stringify(obj));
+const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
 /* ------------------------------ UI pieces ----------------------------- */
 
@@ -69,200 +63,326 @@ const Modal = ({ open, tone = "default", title, description, onClose, actions })
   );
 };
 
-const StatCard = ({ label, value, icon, tone = "neutral" }) => {
-  const toneStyles =
-    tone === "success"
-      ? "hover:border-green-300"
-      : tone === "warning"
-      ? "hover:border-yellow-300"
-      : tone === "danger"
-      ? "hover:border-red-300"
-      : tone === "info"
-      ? "hover:border-orange-300"
-      : "hover:border-gray-300";
+/* ----------------------------- Data mapping ---------------------------- */
+/**
+ * Backend: { file, solicitudes }
+ * solicitudes: array de Solicitud, cada una con items[] y estado (relación) incluida. [web:175]
+ *
+ * Esta función normaliza para la tabla:
+ * - hoja/solicitud (para selector)
+ * - filas aplanadas por solicitud activa
+ */
+const mapApiToUi = (api) => {
+  const file = api?.file || null;
+  const solicitudes = Array.isArray(api?.solicitudes) ? api.solicitudes : [];
 
-  return (
-    <div className={`rounded-xl border border-gray-200 bg-white p-4 transition-all hover:shadow-lg ${toneStyles}`}>
-      <div className="mb-2 flex items-center justify-between">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-gray-100">{icon}</div>
-      </div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-gray-800">{value}</p>
-    </div>
-  );
+  const menuSolicitudes = solicitudes.map((s) => ({
+    id: s.id,
+    nombre: s.nombre || s.name || `Solicitud ${s.id}`,
+    items: Array.isArray(s.items) ? s.items : [],
+  }));
+
+  return { file, menuSolicitudes };
 };
 
-const ItemCard = ({ item, onEstado, onObs }) => {
-  const status = getStatusCfg(item.estado);
-  const tipo = getTipoCfg(item.tipo);
-
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-gray-500 font-mono">{item.codigo}</p>
-          <p className="mt-1 text-sm font-semibold text-gray-800 line-clamp-2">{item.descripcion}</p>
-        </div>
-
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${tipo.bg} ${tipo.text}`}>
-          {item.tipo}
-        </span>
-      </div>
-
-      <div className="mt-3 flex items-center justify-between rounded-lg bg-gray-50 p-2">
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
-          <span className="font-semibold text-gray-800">{item.cantidad}</span>
-          <span className="text-gray-500">{item.unidad}</span>
-        </div>
-        <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${status.bg} ${status.text}`}>
-          <span className={`h-2 w-2 rounded-full ${status.dot}`} />
-          {item.estado}
-        </span>
-      </div>
-
-      <div className="mt-3">
-        <label className="block text-xs font-semibold text-gray-500 mb-1.5">Estado</label>
-        <select
-          value={item.estado}
-          onChange={(e) => onEstado(item.linea, e.target.value)}
-          className={`w-full rounded-lg border-2 px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500 ${status.bg} ${status.text} ${status.border}`}
-        >
-          {STATUS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="mt-3">
-        <label className="block text-xs font-semibold text-gray-500 mb-1.5">Observación admin</label>
-        <div className="relative">
-          <input
-            value={item.observacion}
-            onChange={(e) => onObs(item.linea, e.target.value)}
-            placeholder="Agregar observación..."
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-9 text-sm outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
-          {item.observacion ? (
-            <button
-              onClick={() => onObs(item.linea, "")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-red-600"
-              title="Limpiar"
-              aria-label="Limpiar observación"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-};
+const getItemEstadoNombre = (item) => item?.estado?.nombre || item?.estado || item?.estadoNombre || "Pendiente";
 
 /* -------------------------------- Page -------------------------------- */
 
 export const GestionSolicitudesDetallesPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams(); // id del archivo
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [file, setFile] = useState(null);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [solicitudActivaId, setSolicitudActivaId] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
-  const [tipoFilter, setTipoFilter] = useState("todos");
 
   const [guardando, setGuardando] = useState(false);
-
-  // Modales unificados (en vez de 4 booleanos repetidos)
   const [modal, setModal] = useState({ type: null }); // null | save | discard | success | error
 
-  // Datos demo (igual que tu original, pero con initialState limpio)
-  const solicitud = useMemo(
-    () => ({
-      id,
-      cliente: "Juan Pérez",
-      email: "juan.perez@empresa.com",
-      fecha: "2025-11-27",
-      nombreArchivo: "solicitud-proyecto-norte-nov-2025.xlsx",
-      totalItems: 8,
-      observaciones: "Solicitud urgente para proyecto Norte - Fase 1",
-    }),
-    [id]
-  );
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [activeTab, setActiveTab] = useState("general");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [approveStep, setApproveStep] = useState("confirm");
 
-  const initialItems = useMemo(
-    () => [
-      { linea: 1, codigo: "PROD-001", descripcion: "Válvula de Bola 2\" Acero Inoxidable", cantidad: 25, tipo: "Productos", unidad: "Unidad", estado: "Aprobado", observacion: "Stock disponible" },
-      { linea: 2, codigo: "PROD-002", descripcion: "Tubo PVC 4\" Schedule 40 - 6 metros", cantidad: 50, tipo: "Productos", unidad: "Metro", estado: "Aprobado", observacion: "Confirmar medidas" },
-      { linea: 3, codigo: "MAT-015", descripcion: "Codo 90° 2\" Roscado Hierro Galvanizado", cantidad: 80, tipo: "Materiales", unidad: "Unidad", estado: "Pendiente", observacion: "" },
-      { linea: 4, codigo: "SERV-008", descripcion: "Instalación sistema tubería completo", cantidad: 1, tipo: "Servicios", unidad: "Global", estado: "En Revisión", observacion: "" },
-      { linea: 5, codigo: "EQUIP-022", descripcion: "Compresor de aire 25HP trifásico", cantidad: 2, tipo: "Equipos", unidad: "Unidad", estado: "Rechazado", observacion: "Presupuesto excedido" },
-      { linea: 6, codigo: "MAT-045", descripcion: "Teflón industrial rollo 50m", cantidad: 15, tipo: "Materiales", unidad: "Rollo", estado: "Aprobado", observacion: "" },
-      { linea: 7, codigo: "PROD-089", descripcion: "Válvula Compuerta 4\" Hierro Fundido", cantidad: 12, tipo: "Productos", unidad: "Unidad", estado: "Pendiente", observacion: "" },
-      { linea: 8, codigo: "MAT-101", descripcion: "Niple Hierro Galvanizado 1/2\" x 6\"", cantidad: 100, tipo: "Materiales", unidad: "Unidad", estado: "En Proceso", observacion: "Pedido a proveedor" },
-    ],
-    []
-  );
+const [saveOpen, setSaveOpen] = useState(false);
+const [discardOpen, setDiscardOpen] = useState(false);
+const [successOpen, setSuccessOpen] = useState(false);
+const [errorOpen, setErrorOpen] = useState(false);
 
-  // Guardar “original” en ref para evitar JSON stringify en cada render
-  const originalRef = useRef(clone(initialItems));
-  const [items, setItems] = useState(() => clone(initialItems));
+const [uploadOpen, setUploadOpen] = useState(false);
+const [uploading, setUploading] = useState(false);
 
-  const hayCambios = useMemo(() => JSON.stringify(items) !== JSON.stringify(originalRef.current), [items]);
+const openItem = (item) => {
+  setSelectedItem(item);
+  setActiveTab("general");
+  setItemModalOpen(true);
+};
 
-  const onEstado = (linea, estado) =>
-    setItems((prev) => prev.map((it) => (it.linea === linea ? { ...it, estado } : it)));
+const closeItemModal = () => {
+  setItemModalOpen(false);
+  setSelectedItem(null);
+};
 
-  const onObs = (linea, observacion) =>
-    setItems((prev) => prev.map((it) => (it.linea === linea ? { ...it, observacion } : it)));
+const openAdjuntos = () => {
+  if (!selectedItem) return;
+  setUploadOpen(true);
+};
 
-  const { filteredItems, stats } = useMemo(() => {
+const closeAdjuntos = () => {
+  setUploadOpen(false);
+};
+
+const uploadAdjuntos = async ({ files, descripcion }) => {
+  if (!selectedItem) return; // no debe pasar, pero por seguridad
+  setUploading(true);
+  try {
+    const token = localStorage.getItem("token");
+    const fd = new FormData();
+
+    files.forEach((f) => fd.append("files", f)); // multer espera `files[]` o `files`
+    fd.append("descripcion", descripcion || "");
+    fd.append("itemId", String(selectedItem.id)); // <--- clave: ID del ítem
+
+    const res = await fetch(`${API_URL}/items/${selectedItem.id}/adjuntos`, {
+      method: "POST",
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+      body: fd,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || err.message || "Error subiendo adjuntos");
+    }
+
+    setUploadOpen(false);
+    setSuccessOpen(true);
+  } catch (e) {
+    setErrorOpen(true);
+  } finally {
+    setUploading(false);
+  }
+};
+
+
+  // snapshot original para detectar cambios
+  const originalRef = useRef(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const controller = new AbortController();
+
+    const fetchDetails = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(`http://localhost:3000/api/archivos/detalles/${id}`, {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || "Error al cargar detalles");
+        }
+
+        const api = await res.json();
+        const mapped = mapApiToUi(api);
+
+        setFile(mapped.file);
+        setSolicitudes(mapped.menuSolicitudes);
+
+        const firstId = mapped.menuSolicitudes[0]?.id ?? null;
+        setSolicitudActivaId(firstId);
+
+        // guardar snapshot original (para descartar / detectar cambios)
+        originalRef.current = deepClone(mapped.menuSolicitudes);
+      } catch (e) {
+        if (e.name !== "AbortError") setError(e.message || "Error inesperado");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetails();
+    return () => controller.abort();
+  }, [id]);
+
+  const solicitudActiva = useMemo(() => {
+    return solicitudes.find((s) => String(s.id) === String(solicitudActivaId)) || null;
+  }, [solicitudes, solicitudActivaId]);
+
+  // Normaliza filas de la solicitud activa a un shape estable para tabla
+  const rows = useMemo(() => {
+    const items = solicitudActiva?.items || [];
+    return items.map((it, idx) => ({
+      // id real del item en BD (clave para updates)
+      id: it.id,
+      linea: idx + 1,
+      codigo: it.codigo || it.sku || "-",
+      descripcion: it.descripcion || "-",
+      cantidad: it.cantidad ?? it.cantidadtotal ?? 0,
+      unidad: it.unidad || "-",
+      tipo: it.tipo || "-", // si en tu modelo existe
+      estado: getItemEstadoNombre(it),
+      observacion: it.observacion || it.observaciones || "",
+    }));
+  }, [solicitudActiva]);
+
+  const { filteredRows, stats } = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
-    const filteredItems = items.filter((it) => {
+    const filteredRows = rows.filter((r) => {
       const matchesSearch =
-        !term ||
-        it.codigo.toLowerCase().includes(term) ||
-        it.descripcion.toLowerCase().includes(term);
-
-      const matchesStatus = statusFilter === "todos" || it.estado === statusFilter;
-      const matchesTipo = tipoFilter === "todos" || it.tipo === tipoFilter;
-
-      return matchesSearch && matchesStatus && matchesTipo;
+        !term || r.codigo.toLowerCase().includes(term) || r.descripcion.toLowerCase().includes(term);
+      const matchesStatus = statusFilter === "todos" || r.estado === statusFilter;
+      return matchesSearch && matchesStatus;
     });
 
     const stats = {
-      total: items.length,
-      aprobados: items.filter((i) => i.estado === "Aprobado").length,
-      pendientes: items.filter((i) => i.estado === "Pendiente" || i.estado === "En Revisión").length,
-      enProceso: items.filter((i) => i.estado === "En Proceso").length,
-      rechazados: items.filter((i) => i.estado === "Rechazado").length,
+      total: rows.length,
+      aprobados: rows.filter((r) => r.estado === "Aprobado").length,
+      pendientes: rows.filter((r) => r.estado === "Pendiente" || r.estado === "En Revisión").length,
+      enProceso: rows.filter((r) => r.estado === "En Proceso").length,
+      rechazados: rows.filter((r) => r.estado === "Rechazado").length,
     };
 
-    return { filteredItems, stats };
-  }, [items, searchTerm, statusFilter, tipoFilter]);
+    return { filteredRows, stats };
+  }, [rows, searchTerm, statusFilter]);
+
+  // Cambios: compara current vs snapshot original
+  const hayCambios = useMemo(() => {
+    if (!originalRef.current) return false;
+    return JSON.stringify(solicitudes) !== JSON.stringify(originalRef.current);
+  }, [solicitudes]);
+
+  const updateItemInSolicitudActiva = (itemId, patch) => {
+    setSolicitudes((prev) =>
+      prev.map((s) => {
+        if (String(s.id) !== String(solicitudActivaId)) return s;
+        return {
+          ...s,
+          items: (s.items || []).map((it) => (String(it.id) === String(itemId) ? { ...it, ...patch } : it)),
+        };
+      })
+    );
+  };
+
+  const onChangeEstado = (itemId, nuevoEstadoNombre) => {
+    // guardamos como campo plano para UI; al guardar se traduce a lo que pida el backend
+    updateItemInSolicitudActiva(itemId, { estado: { ...(typeof nuevoEstadoNombre === "string" ? { nombre: nuevoEstadoNombre } : {}) }, estadoNombre: nuevoEstadoNombre });
+  };
+
+  const onChangeObs = (itemId, observacion) => {
+    updateItemInSolicitudActiva(itemId, { observacion });
+  };
+
+  const descartarCambios = () => {
+    if (!originalRef.current) return;
+    setSolicitudes(deepClone(originalRef.current));
+    setModal({ type: null });
+  };
 
   const guardarCambios = async () => {
     setModal({ type: null });
     setGuardando(true);
 
     try {
-      // TODO: PUT backend
-      await new Promise((r) => setTimeout(r, 900));
-      originalRef.current = clone(items);
+      // 1) calcular diffs (solo lo modificado)
+      const original = originalRef.current || [];
+      const current = solicitudes;
+
+      const diffs = [];
+      for (const s of current) {
+        const s0 = original.find((x) => String(x.id) === String(s.id));
+        const items0 = s0?.items || [];
+        for (const it of s.items || []) {
+          const it0 = items0.find((x) => String(x.id) === String(it.id));
+          if (!it0) continue;
+
+          const estadoNow = getItemEstadoNombre(it);
+          const estadoOld = getItemEstadoNombre(it0);
+          const obsNow = it.observacion || "";
+          const obsOld = it0.observacion || "";
+
+          if (estadoNow !== estadoOld || obsNow !== obsOld) {
+            diffs.push({ itemId: it.id, estadoNombre: estadoNow, observacion: obsNow });
+          }
+        }
+      }
+
+      // 2) si no hay diffs, no hagas request
+      if (diffs.length === 0) {
+        setModal({ type: "success" });
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+
+      // TODO: reemplaza por tu endpoint real.
+      // Recomendación: endpoint batch para evitar N requests.
+      // await fetch(`http://localhost:3000/api/archivos/${id}/items`, { method: "PUT", body: JSON.stringify({ diffs }) ... })
+
+      await Promise.all(
+        diffs.map((d) =>
+          fetch(`http://localhost:3000/api/items/${d.itemId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+            body: JSON.stringify({
+              estadoNombre: d.estadoNombre,
+              observacion: d.observacion,
+            }),
+          }).then(async (r) => {
+            if (!r.ok) {
+              const err = await r.json().catch(() => ({}));
+              throw new Error(err.error || err.message || "Error guardando un ítem");
+            }
+          })
+        )
+      );
+
+      // 3) commit snapshot
+      originalRef.current = deepClone(solicitudes);
       setModal({ type: "success" });
-    } catch {
-      setModal({ type: "error" });
+    } catch (e) {
+      setModal({ type: "error", message: e.message });
     } finally {
       setGuardando(false);
     }
   };
 
-  const descartarCambios = () => {
-    setItems(clone(originalRef.current));
-    setModal({ type: null });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-gray-50">
+        <p className="text-sm text-gray-600">Cargando...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-gray-50 p-4">
+        <div className="w-full max-w-md rounded-xl border border-red-200 bg-white p-5">
+          <p className="text-sm font-semibold text-red-600">Error</p>
+          <p className="mt-1 text-xs text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
@@ -283,10 +403,10 @@ export const GestionSolicitudesDetallesPage = () => {
 
               <div className="min-w-0">
                 <h1 className="truncate text-sm sm:text-base lg:text-xl font-bold text-gray-800">
-                  {solicitud.id}
+                  Archivo #{file?.id ?? id}
                 </h1>
                 <p className="hidden sm:block truncate text-xs text-gray-500">
-                  Cliente: {solicitud.cliente}
+                  {file?.sourcefile || file?.nombreArchivo || "-"}
                 </p>
               </div>
 
@@ -309,83 +429,50 @@ export const GestionSolicitudesDetallesPage = () => {
       </header>
 
       <main className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8 py-5 pb-28 sm:pb-24">
-        {/* Info solicitud */}
+        {/* Info + selector solicitud */}
         <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500">Cliente</p>
-              <p className="text-sm font-semibold text-gray-800 truncate">{solicitud.cliente}</p>
-              <p className="text-xs text-gray-500 truncate">{solicitud.email}</p>
-            </div>
-
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500">Archivo</p>
-              <p className="text-sm font-semibold text-gray-800 truncate">{solicitud.nombreArchivo}</p>
-            </div>
-
             <div>
               <p className="text-xs text-gray-500">Fecha de carga</p>
-              <p className="text-sm font-semibold text-gray-800">{formatFecha(solicitud.fecha)}</p>
+              <p className="text-sm font-semibold text-gray-800">{formatFecha(file?.fechaCreacion || file?.fechaCreacion)}</p>
+            </div>
+
+            <div className="sm:col-span-2">
+              <p className="text-xs text-gray-500">Solicitud / Hoja</p>
+              <select
+                value={solicitudActivaId ?? ""}
+                onChange={(e) => setSolicitudActivaId(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                {solicitudes.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre} ({(s.items || []).length})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <StatCard
-            label="Total"
-            value={stats.total}
-            icon={
-              <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            }
-          />
-          <StatCard
-            label="Aprobados"
-            value={stats.aprobados}
-            tone="success"
-            icon={
-              <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            }
-          />
-          <StatCard
-            label="Pendientes"
-            value={stats.pendientes}
-            tone="warning"
-            icon={
-              <svg className="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          />
-          <StatCard
-            label="En proceso"
-            value={stats.enProceso}
-            tone="info"
-            icon={
-              <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            }
-          />
-          <StatCard
-            label="Rechazados"
-            value={stats.rechazados}
-            tone="danger"
-            icon={
-              <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            }
-          />
+        {/* Stats compactas */}
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {[
+            ["Total", stats.total],
+            ["Aprob.", stats.aprobados],
+            ["Pend.", stats.pendientes],
+            ["Proceso", stats.enProceso],
+            ["Rech.", stats.rechazados],
+          ].map(([label, val]) => (
+            <div key={label} className="rounded-xl border border-gray-200 bg-white p-4">
+              <p className="text-xs text-gray-500">{label}</p>
+              <p className="mt-1 text-xl font-bold text-gray-800">{val}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Filters */}
-        <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        {/* Filtros */}
+        <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="relative">
               <svg className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -399,25 +486,12 @@ export const GestionSolicitudesDetallesPage = () => {
             </div>
 
             <select
-              value={tipoFilter}
-              onChange={(e) => setTipoFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
-            >
-              <option value="todos">Todos los tipos</option>
-              {TIPOS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-
-            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="todos">Todos los estados</option>
-              {STATUS.map((s) => (
+              {Object.keys(STATUS_CONFIG).map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
@@ -426,34 +500,90 @@ export const GestionSolicitudesDetallesPage = () => {
           </div>
         </div>
 
-        {/* List (solo cards responsive; se elimina tabla redundante) */}
-        {filteredItems.length === 0 ? (
+        {/* Tabla responsive */}
+        {filteredRows.length === 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-600">
             No se encontraron ítems con los filtros aplicados.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:gap-4">
-            {filteredItems.map((item) => (
-              <ItemCard key={item.linea} item={item} onEstado={onEstado} onObs={onObs} />
-            ))}
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div className="overflow-x-auto" /* responsive scroll */>
+              <table className="min-w-[980px] w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">#</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Código</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Descripción</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-600">Cant.</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Unidad</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Estado</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Obs. admin</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-gray-200">
+                  {filteredRows.map((r) => {
+                    const status = getStatusCfg(r.estado);
+
+                    return (
+                        <tr
+                          key={r.id}
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => openItem(r)} // <--- importante
+                        >
+                        <td className="px-4 py-3 text-gray-600 font-medium">{r.linea}</td>
+
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-xs text-gray-700">{r.codigo}</span>
+                        </td>
+
+                        <td className="px-4 py-3 text-gray-800 max-w-[520px]">
+                          <span className="line-clamp-2">{r.descripcion}</span>
+                        </td>
+
+                        <td className="px-4 py-3 text-right font-semibold text-gray-800">{r.cantidad}</td>
+
+                        <td className="px-4 py-3 text-gray-600">{r.unidad}</td>
+
+                        <td className="px-4 py-3">
+                          <select
+                            value={r.estado}
+                            onChange={(e) => onChangeEstado(r.id, e.target.value)}
+                            className={`w-full rounded-lg border-2 px-2 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-orange-500 ${status.bg} ${status.text} ${status.border}`}
+                          >
+                            {Object.keys(STATUS_CONFIG).map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <input
+                            value={r.observacion}
+                            onChange={(e) => onChangeObs(r.id, e.target.value)}
+                            placeholder="Agregar observación..."
+                            className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>
 
-      {/* Bottom Bar (solo si hay cambios) */}
+      {/* Bottom Bar */}
       {hayCambios ? (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-orange-200 bg-white shadow-2xl">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4 lg:px-8">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-orange-100">
-                <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">Cambios sin guardar</p>
-                <p className="hidden sm:block text-xs text-gray-600">Guarda o descarta antes de salir.</p>
-              </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-800 truncate">Cambios sin guardar</p>
+              <p className="hidden sm:block text-xs text-gray-600">Guarda o descarta antes de salir.</p>
             </div>
 
             <div className="flex w-full gap-2 sm:w-auto">
@@ -463,6 +593,7 @@ export const GestionSolicitudesDetallesPage = () => {
               >
                 Descartar
               </button>
+
               <button
                 onClick={() => setModal({ type: "save" })}
                 disabled={guardando}
@@ -475,12 +606,12 @@ export const GestionSolicitudesDetallesPage = () => {
         </div>
       ) : null}
 
-      {/* Modales (reutilizable) */}
+      {/* Modales */}
       <Modal
         open={modal.type === "save"}
         tone="success"
         title="¿Guardar cambios?"
-        description="Se actualizarán estados y observaciones de los ítems modificados."
+        description="Se actualizarán los ítems modificados."
         onClose={() => setModal({ type: null })}
         actions={
           <>
@@ -504,7 +635,7 @@ export const GestionSolicitudesDetallesPage = () => {
         open={modal.type === "discard"}
         tone="danger"
         title="¿Descartar cambios?"
-        description="Se perderán todas las modificaciones realizadas."
+        description="Se perderán las modificaciones no guardadas."
         onClose={() => setModal({ type: null })}
         actions={
           <>
@@ -534,7 +665,7 @@ export const GestionSolicitudesDetallesPage = () => {
           <button
             onClick={() => {
               setModal({ type: null });
-              navigate("/solicitudes/gestion");
+              navigate("/solicitudes/admin");
             }}
             className="w-full rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:from-green-600 hover:to-green-700"
           >
@@ -547,7 +678,7 @@ export const GestionSolicitudesDetallesPage = () => {
         open={modal.type === "error"}
         tone="danger"
         title="Error al guardar"
-        description="Ocurrió un error al intentar guardar. Intenta nuevamente."
+        description={modal.message || "Ocurrió un error al intentar guardar. Intenta nuevamente."}
         onClose={() => setModal({ type: null })}
         actions={
           <button
@@ -558,6 +689,69 @@ export const GestionSolicitudesDetallesPage = () => {
           </button>
         }
       />
+
+<ItemDetailsModal
+  open={itemModalOpen}
+  item={selectedItem}
+  activeTab={activeTab}
+  setActiveTab={setActiveTab}
+  onClose={closeItemModal}
+  onAdjuntarClick={openAdjuntos}
+  approvingDisabled={false}
+/>
+
+<ModalConfirm
+  open={confirmOpen}
+  item={selectedItem}
+  step={approveStep}
+  onCancel={() => setConfirmOpen(false)}
+/>
+
+
+            <ConfirmModal
+  open={saveOpen}
+  tone="success"
+  title="¿Guardar cambios?"
+  description="Se actualizarán los ítems modificados."
+  confirmText="Guardar"
+  loading={guardando}
+  onCancel={() => setSaveOpen(false)}
+  onConfirm={guardarCambios}
+/>
+
+<ConfirmModal
+  open={discardOpen}
+  tone="danger"
+  title="¿Descartar cambios?"
+  description="Se perderán las modificaciones no guardadas."
+  confirmText="Descartar"
+  onCancel={() => setDiscardOpen(false)}
+  onConfirm={descartarCambios}
+/>
+
+<ResultModal
+  open={successOpen}
+  tone="success"
+  title="Operación exitosa"
+  description="Acción completada correctamente."
+  onClose={() => setSuccessOpen(false)}
+/>
+
+<ResultModal
+  open={errorOpen}
+  tone="danger"
+  title="Error"
+  description="Ocurrió un error. Intenta nuevamente."
+  onClose={() => setErrorOpen(false)}
+/>
+
+<UploadAdjuntosModal
+  open={uploadOpen}
+  loading={uploading}
+  onClose={() => setUploadOpen(false)}
+  onUpload={uploadAdjuntos}
+/>
+
     </div>
   );
 };

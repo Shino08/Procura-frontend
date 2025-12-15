@@ -80,7 +80,7 @@ export const SolicitudesPage = () => {
     };
   }, [archivos, searchTerm, currentPage]);
 
-  const handleViewDetails = (id) => navigate(`/solicitudes/lista/${id}`);
+  const handleViewDetails = (id) => navigate(`/solicitudes/usuario/${id}`);
 
   const onSearchChange = (value) => {
     setSearchTerm(value);

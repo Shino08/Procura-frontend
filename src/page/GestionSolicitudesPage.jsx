@@ -200,7 +200,7 @@ const filtered = term
                     </td>
 
                     <td className="px-6 py-4">
-                      {s.correo ? <p className="hidden text-xs text-gray-500 sm:block">{s.correo}</p> : null}
+                      {s.usuario ? <p className="hidden text-xs text-gray-500 sm:block">{s.usuario}</p> : null}
                     </td>
 
                     <td className="px-6 py-4">
