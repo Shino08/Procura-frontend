@@ -4,7 +4,6 @@ import { ModalConfirm } from "../components/ModalConfirm";
 import { ItemDetailsModal } from "../components/ItemDetailsModal";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { ResultModal } from "../components/ResultModal";
-import { UploadAdjuntosModal } from "../components/UploadAdjuntosModal";
 
 import { API_URL } from "../services";
 import { formatFecha } from "../utils/solicitudesUi";
@@ -15,53 +14,16 @@ const STATUS_CONFIG = {
   Pendiente: { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500", border: "border-yellow-300" },
   "En Revisión": { bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500", border: "border-blue-300" },
   Aprobado: { bg: "bg-green-100", text: "text-green-700", dot: "bg-green-500", border: "border-green-300" },
-  Rechazado: { bg: "bg-red-100", text: "text-red-700", dot: "bg-red-500", border: "border-red-300" },
-  "En Proceso": { bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500", border: "border-orange-300" },
+
+  "En Compra": { bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500", border: "border-orange-300" },
+  Recibido: { bg: "bg-emerald-100", text: "text-emerald-700", dot: "bg-emerald-500", border: "border-emerald-300" },
+  Cancelado: { bg: "bg-red-100", text: "text-red-700", dot: "bg-red-500", border: "border-red-300" },
 };
 
 const DEFAULT_STATUS = STATUS_CONFIG.Pendiente;
 const getStatusCfg = (estado) => STATUS_CONFIG[estado] || DEFAULT_STATUS;
 
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
-
-/* ------------------------------ UI pieces ----------------------------- */
-
-const Modal = ({ open, tone = "default", title, description, onClose, actions }) => {
-  if (!open) return null;
-
-  const toneBar =
-    tone === "success"
-      ? "from-green-500 to-green-600"
-      : tone === "danger"
-      ? "from-red-500 to-red-600"
-      : "from-gray-700 to-gray-800";
-
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-3 sm:p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={`h-1 w-full bg-gradient-to-r ${toneBar}`} />
-        <div className="p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="text-base sm:text-lg font-bold text-gray-800">{title}</h3>
-              {description ? <p className="mt-1 text-xs sm:text-sm text-gray-600">{description}</p> : null}
-            </div>
-            <button onClick={onClose} className="rounded-lg p-2 hover:bg-gray-100" aria-label="Cerrar">
-              <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {actions ? <div className="mt-5 flex flex-col sm:flex-row gap-2">{actions}</div> : null}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 /* ----------------------------- Data mapping ---------------------------- */
 /**
@@ -101,7 +63,6 @@ export const GestionSolicitudesDetallesPage = () => {
   const [solicitudActivaId, setSolicitudActivaId] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
 
   const [guardando, setGuardando] = useState(false);
   const [modal, setModal] = useState({ type: null }); // null | save | discard | success | error
@@ -117,8 +78,28 @@ const [discardOpen, setDiscardOpen] = useState(false);
 const [successOpen, setSuccessOpen] = useState(false);
 const [errorOpen, setErrorOpen] = useState(false);
 
-const [uploadOpen, setUploadOpen] = useState(false);
-const [uploading, setUploading] = useState(false);
+const [estados, setEstados] = useState([]);        // [{id, nombre}]
+const [statusFilter, setStatusFilter] = useState("todos"); // ahora guardará id o "todos"
+
+useEffect(() => {
+  const controller = new AbortController();
+
+  (async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/estados`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        signal: controller.signal,
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setEstados(Array.isArray(data) ? data : []);
+    } catch (_) {}
+  })();
+
+  return () => controller.abort();
+}, []);
+
 
 const openItem = (item) => {
   setSelectedItem(item);
@@ -130,47 +111,6 @@ const closeItemModal = () => {
   setItemModalOpen(false);
   setSelectedItem(null);
 };
-
-const openAdjuntos = () => {
-  if (!selectedItem) return;
-  setUploadOpen(true);
-};
-
-const closeAdjuntos = () => {
-  setUploadOpen(false);
-};
-
-const uploadAdjuntos = async ({ files, descripcion }) => {
-  if (!selectedItem) return; // no debe pasar, pero por seguridad
-  setUploading(true);
-  try {
-    const token = localStorage.getItem("token");
-    const fd = new FormData();
-
-    files.forEach((f) => fd.append("files", f)); // multer espera `files[]` o `files`
-    fd.append("descripcion", descripcion || "");
-    fd.append("itemId", String(selectedItem.id)); // <--- clave: ID del ítem
-
-    const res = await fetch(`${API_URL}/items/${selectedItem.id}/adjuntos`, {
-      method: "POST",
-      headers: { Authorization: token ? `Bearer ${token}` : "" },
-      body: fd,
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || err.message || "Error subiendo adjuntos");
-    }
-
-    setUploadOpen(false);
-    setSuccessOpen(true);
-  } catch (e) {
-    setErrorOpen(true);
-  } finally {
-    setUploading(false);
-  }
-};
-
 
   // snapshot original para detectar cambios
   const originalRef = useRef(null);
@@ -224,42 +164,53 @@ const uploadAdjuntos = async ({ files, descripcion }) => {
   }, [solicitudes, solicitudActivaId]);
 
   // Normaliza filas de la solicitud activa a un shape estable para tabla
-  const rows = useMemo(() => {
-    const items = solicitudActiva?.items || [];
-    return items.map((it, idx) => ({
-      // id real del item en BD (clave para updates)
+const rows = useMemo(() => {
+  const items = solicitudActiva?.items || [];
+  return items.map((it, idx) => {
+    const estadoId = it?.estado?.id ?? null;
+    const estadoNombre = it?.estado?.nombre ?? getItemEstadoNombre(it);
+
+    return {
       id: it.id,
       linea: idx + 1,
-      codigo: it.codigo || it.sku || "-",
-      descripcion: it.descripcion || "-",
-      cantidad: it.cantidad ?? it.cantidadtotal ?? 0,
+      codigo: String(it.codigo || it.sku || "-"),
+      descripcion: String(it.descripcion || "-"),
+      cantidadTotal: it.cantidadTotal ?? it.cantidad ?? 0,
       unidad: it.unidad || "-",
-      tipo: it.tipo || "-", // si en tu modelo existe
-      estado: getItemEstadoNombre(it),
-      observacion: it.observacion || it.observaciones || "",
-    }));
-  }, [solicitudActiva]);
-
-  const { filteredRows, stats } = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-
-    const filteredRows = rows.filter((r) => {
-      const matchesSearch =
-        !term || r.codigo.toLowerCase().includes(term) || r.descripcion.toLowerCase().includes(term);
-      const matchesStatus = statusFilter === "todos" || r.estado === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-
-    const stats = {
-      total: rows.length,
-      aprobados: rows.filter((r) => r.estado === "Aprobado").length,
-      pendientes: rows.filter((r) => r.estado === "Pendiente" || r.estado === "En Revisión").length,
-      enProceso: rows.filter((r) => r.estado === "En Proceso").length,
-      rechazados: rows.filter((r) => r.estado === "Rechazado").length,
+      tipo: it.tipo || "-",
+      estadoId,                 // <-- CLAVE para el filtro
+      estado: estadoNombre,     // <-- lo que muestras en tabla/badge
+      ultimaObservacion: it?.ultimaObservacion?.observacion || "",
     };
+  });
+}, [solicitudActiva]);
 
-    return { filteredRows, stats };
-  }, [rows, searchTerm, statusFilter]);
+const { filteredRows, stats } = useMemo(() => {
+  const term = (searchTerm || "").trim().toLowerCase();
+
+  const filteredRows = rows.filter((r) => {
+    const matchesSearch =
+      !term ||
+      (r.codigo || "").toLowerCase().includes(term) ||
+      (r.descripcion || "").toLowerCase().includes(term);
+
+    const matchesStatus =
+      statusFilter === "todos" || String(r.estadoId) === String(statusFilter);
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const stats = {
+    total: rows.length,
+    aprobados: rows.filter((r) => r.estado === "Aprobado").length,
+    pendientes: rows.filter((r) => r.estado === "Pendiente" || r.estado === "En Revisión").length,
+    enProceso: rows.filter((r) => r.estado === "En Proceso").length,
+    rechazados: rows.filter((r) => r.estado === "Rechazado").length,
+  };
+
+  return { filteredRows, stats };
+}, [rows, searchTerm, statusFilter]);
+
 
   // Cambios: compara current vs snapshot original
   const hayCambios = useMemo(() => {
@@ -491,12 +442,13 @@ const uploadAdjuntos = async ({ files, descripcion }) => {
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="todos">Todos los estados</option>
-              {Object.keys(STATUS_CONFIG).map((s) => (
-                <option key={s} value={s}>
-                  {s}
+              {estados.map((e) => (
+                <option key={e.id} value={String(e.id)}>
+                  {e.nombre}
                 </option>
               ))}
             </select>
+
           </div>
         </div>
 
@@ -521,56 +473,49 @@ const uploadAdjuntos = async ({ files, descripcion }) => {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-200">
-                  {filteredRows.map((r) => {
-                    const status = getStatusCfg(r.estado);
+<tbody className="divide-y divide-gray-200">
+  {filteredRows.map((r) => {
+    const status = getStatusCfg(r.estado);
 
-                    return (
-                        <tr
-                          key={r.id}
-                          className="hover:bg-gray-50 cursor-pointer"
-                          onClick={() => openItem(r)} // <--- importante
-                        >
-                        <td className="px-4 py-3 text-gray-600 font-medium">{r.linea}</td>
+    return (
+      <tr
+        key={r.id}
+        className="hover:bg-gray-50 cursor-pointer"
+        onClick={() => openItem(r)}
+      >
+        <td className="px-4 py-3 text-gray-600 font-medium">{r.linea}</td>
 
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-xs text-gray-700">{r.codigo}</span>
-                        </td>
+        <td className="px-4 py-3">
+          <span className="font-mono text-xs text-gray-700">{r.codigo}</span>
+        </td>
 
-                        <td className="px-4 py-3 text-gray-800 max-w-[520px]">
-                          <span className="line-clamp-2">{r.descripcion}</span>
-                        </td>
+        <td className="px-4 py-3 text-gray-800 max-w-[520px]">
+          <span className="line-clamp-2">{r.descripcion}</span>
+        </td>
 
-                        <td className="px-4 py-3 text-right font-semibold text-gray-800">{r.cantidad}</td>
+        <td className="px-4 py-3 text-right font-semibold text-gray-800">{r.cantidadTotal}</td>
 
-                        <td className="px-4 py-3 text-gray-600">{r.unidad}</td>
+        <td className="px-4 py-3 text-gray-600">{r.unidad}</td>
 
-                        <td className="px-4 py-3">
-                          <select
-                            value={r.estado}
-                            onChange={(e) => onChangeEstado(r.id, e.target.value)}
-                            className={`w-full rounded-lg border-2 px-2 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-orange-500 ${status.bg} ${status.text} ${status.border}`}
-                          >
-                            {Object.keys(STATUS_CONFIG).map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
+        {/* Estado (solo visual) */}
+        <td className="px-4 py-3">
+          <span
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${status.bg} ${status.text}`}
+          >
+            <span className={`h-2 w-2 rounded-full ${status.dot}`} />
+            {r.estado}
+          </span>
+        </td>
 
-                        <td className="px-4 py-3">
-                          <input
-                            value={r.observacion}
-                            onChange={(e) => onChangeObs(r.id, e.target.value)}
-                            placeholder="Agregar observación..."
-                            className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
+        {/* Observación (solo visual) */}
+        <td className="px-4 py-3 text-gray-600 text-xs max-w-xs truncate">
+          {r.ultimaObservacion || r.observacion}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+
               </table>
             </div>
           </div>
@@ -606,97 +551,16 @@ const uploadAdjuntos = async ({ files, descripcion }) => {
         </div>
       ) : null}
 
-      {/* Modales */}
-      <Modal
-        open={modal.type === "save"}
-        tone="success"
-        title="¿Guardar cambios?"
-        description="Se actualizarán los ítems modificados."
-        onClose={() => setModal({ type: null })}
-        actions={
-          <>
-            <button
-              onClick={() => setModal({ type: null })}
-              className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 text-xs sm:text-sm font-semibold text-gray-800 hover:bg-gray-200"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={guardarCambios}
-              className="flex-1 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:from-green-600 hover:to-green-700"
-            >
-              Confirmar
-            </button>
-          </>
-        }
-      />
-
-      <Modal
-        open={modal.type === "discard"}
-        tone="danger"
-        title="¿Descartar cambios?"
-        description="Se perderán las modificaciones no guardadas."
-        onClose={() => setModal({ type: null })}
-        actions={
-          <>
-            <button
-              onClick={() => setModal({ type: null })}
-              className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 text-xs sm:text-sm font-semibold text-gray-800 hover:bg-gray-200"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={descartarCambios}
-              className="flex-1 rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:from-red-600 hover:to-red-700"
-            >
-              Descartar
-            </button>
-          </>
-        }
-      />
-
-      <Modal
-        open={modal.type === "success"}
-        tone="success"
-        title="Cambios guardados"
-        description="Los cambios se guardaron correctamente."
-        onClose={() => setModal({ type: null })}
-        actions={
-          <button
-            onClick={() => {
-              setModal({ type: null });
-              navigate("/solicitudes/admin");
-            }}
-            className="w-full rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:from-green-600 hover:to-green-700"
-          >
-            Entendido
-          </button>
-        }
-      />
-
-      <Modal
-        open={modal.type === "error"}
-        tone="danger"
-        title="Error al guardar"
-        description={modal.message || "Ocurrió un error al intentar guardar. Intenta nuevamente."}
-        onClose={() => setModal({ type: null })}
-        actions={
-          <button
-            onClick={() => setModal({ type: null })}
-            className="w-full rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:from-red-600 hover:to-red-700"
-          >
-            Cerrar
-          </button>
-        }
-      />
-
 <ItemDetailsModal
   open={itemModalOpen}
   item={selectedItem}
   activeTab={activeTab}
   setActiveTab={setActiveTab}
   onClose={closeItemModal}
-  onAdjuntarClick={openAdjuntos}
+  onItemUpdated={() => {
+    // opcional: refrescar todo el archivo para ver los cambios
+    window.location.reload(); // o llama fetchDetails() de nuevo
+  }}
   approvingDisabled={false}
 />
 
@@ -708,7 +572,7 @@ const uploadAdjuntos = async ({ files, descripcion }) => {
 />
 
 
-            <ConfirmModal
+  <ConfirmModal
   open={saveOpen}
   tone="success"
   title="¿Guardar cambios?"
@@ -743,13 +607,6 @@ const uploadAdjuntos = async ({ files, descripcion }) => {
   title="Error"
   description="Ocurrió un error. Intenta nuevamente."
   onClose={() => setErrorOpen(false)}
-/>
-
-<UploadAdjuntosModal
-  open={uploadOpen}
-  loading={uploading}
-  onClose={() => setUploadOpen(false)}
-  onUpload={uploadAdjuntos}
 />
 
     </div>
