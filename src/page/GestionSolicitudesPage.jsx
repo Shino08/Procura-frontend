@@ -88,7 +88,56 @@ const filtered = term
   };
 
   const viewDetails = (id) => navigate(`/solicitudes/admin/${id}`);
-  const downloadFile = (url) => window.open(`http://localhost:3000${url}`, "_blank");
+
+const download = async (archivoId) => {
+  try {
+    if (!archivoId) throw new Error("ID de archivo inválido");
+
+    const token = localStorage.getItem("token");
+    const url = `${API_URL}/archivos/${archivoId}/descargar`;
+
+    const res = await fetch(url, {
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.error || `Error HTTP ${res.status}`);
+    }
+
+    // Obtén el nombre del archivo desde el header Content-Disposition o usa el de la solicitud
+    const contentDisposition = res.headers.get("Content-Disposition");
+    let fileName = `archivo-${archivoId}`;
+    
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        fileName = match[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Busca el nombre original en el array de solicitudes si no viene en el header
+    const solicitud = solicitudes.find(s => s.id === archivoId);
+    if (solicitud?.nombre) {
+      fileName = solicitud.nombre;
+    }
+
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(objectUrl);
+  } catch (error) {
+    console.error("Error descargando archivo:", error);
+    alert(error.message || "No se pudo descargar el archivo");
+  }
+};
 
   if (loading) {
     return (
@@ -220,12 +269,13 @@ const filtered = term
 
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => downloadFile(s.url)}
-                          className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                        >
-                          Descargar
-                        </button>
+                      <button
+                        onClick={() => download(s.id)} 
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                      >
+                        Descargar
+                      </button>
+
                         <button
                           onClick={() => viewDetails(s.id)}
                           className="rounded-lg px-3 py-2 text-xs font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50"
@@ -272,7 +322,7 @@ const filtered = term
 
                 <div className="mt-4 grid grid-cols-2 gap-2 border-t border-gray-100 pt-3">
                   <button
-                    onClick={() => downloadFile(s.url)}
+                    onClick={() => download(s.id)}
                     className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                   >
                     Descargar

@@ -22,7 +22,7 @@ const mapApiToUi = (data) => {
       cantidadTotal: Number(it.cantidadTotal ?? 0),
       estado: it?.estado?.nombre || "Pendiente",
       estadoId: it?.estado?.id ?? null,
-      ultimaObservacion: it?.ultimaObservacion?.observacion || "", // tu response no trae observación; si luego agregas campo en BD, mapea aquí
+      ultimaObservacion: it?.ultimaObservacion?.observacion || "Sin observación", // tu response no trae observación; si luego agregas campo en BD, mapea aquí
     }));
 
     return {
@@ -36,16 +36,17 @@ const mapApiToUi = (data) => {
 
   const totalItemsArchivo = mappedSolicitudes.reduce((acc, s) => acc + s.totalItems, 0);
 
-  const header = file
-    ? {
-        id: formatArchivoId(file.id),
-        fecha: file.fechaCreacion, // viene así en tu response
-        nombreArchivo: file.nombre,
-        totalItems: totalItemsArchivo,
-        observaciones: `Solicitudes asociadas: ${mappedSolicitudes.length}`,
-        url: file.url,
-      }
-    : null;
+const header = file
+  ? {
+      archivoId: file.id,              // <-- ID real para descargar
+      id: formatArchivoId(file.id),    // <-- ID “bonito” para mostrar
+      fecha: file.fechaCreacion,
+      nombreArchivo: file.nombre,
+      totalItems: totalItemsArchivo,
+      observaciones: `Solicitudes asociadas: ${mappedSolicitudes.length}`,
+      url: file.url,
+    }
+  : null;
 
   return { header, mappedSolicitudes };
 };
@@ -245,6 +246,37 @@ const filteredItems = itemsBase.filter((item) => {
     setCurrentPage(1);
   };
 
+const download = async (archivoId) => {
+  if (!archivoId) throw new Error("archivoId inválido");
+
+  const token = localStorage.getItem("token");
+
+  // Asegúrate que tu backend realmente sea /archivos/:id/descargar
+  const url = `${API_URL}/archivos/${archivoId}/descargar`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error || `HTTP ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob); // URL temporal para el blob [web:537]
+
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = header?.nombreArchivo || `archivo-${archivoId}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(objectUrl); // libera memoria [web:538]
+};
+
+
   if (loading) {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-50">
@@ -297,16 +329,14 @@ const filteredItems = itemsBase.filter((item) => {
             </div>
 
             <div className="flex items-center gap-2">
-              {header.url ? (
-                <a
-                  href={`${API_URL.replace(/\/api$/, "")}${header.url}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hidden sm:inline-flex rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                  Descargar
-                </a>
-              ) : null}
+{header?.archivoId ? (
+  <button
+    onClick={() => download(header.archivoId)}
+    className="hidden sm:inline-flex rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+  >
+    Descargar
+  </button>
+) : null}
 
               <button
                 onClick={() => navigate("/dashboard")}
