@@ -22,7 +22,7 @@ const mapApiToUi = (data) => {
       cantidadTotal: Number(it.cantidadTotal ?? 0),
       estado: it?.estado?.nombre || "Pendiente",
       estadoId: it?.estado?.id ?? null,
-      observacion: "", // tu response no trae observación; si luego agregas campo en BD, mapea aquí
+      ultimaObservacion: it?.ultimaObservacion?.observacion || "", // tu response no trae observación; si luego agregas campo en BD, mapea aquí
     }));
 
     return {
@@ -72,6 +72,26 @@ const [activeTab, setActiveTab] = useState("general");
 const [selectedItem, setSelectedItem] = useState(null);
 const [approveStep, setApproveStep] = useState("confirm"); // confirm | processing | success
 
+// arriba, junto a otros estados
+const [estados, setEstados] = useState([]);
+
+// al montar (o cuando haya token)
+useEffect(() => {
+  const controller = new AbortController();
+  (async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/estados`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        signal: controller.signal,
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setEstados(Array.isArray(data) ? data : []);
+    } catch (_) {}
+  })();
+  return () => controller.abort();
+}, []);
 
     const openItem = (item) => {
     setSelectedItem(item);
@@ -96,10 +116,6 @@ const [approveStep, setApproveStep] = useState("confirm"); // confirm | processi
 
     try {
       setApproveStep("processing");
-
-      // TODO: reemplazar por tu endpoint real (PATCH/PUT aprobar item)
-      // await fetch(`${API_URL}/items/${selectedItem.id}/aprobar`, ...)
-
       // Simulación breve
       await new Promise((r) => setTimeout(r, 900));
 
@@ -180,15 +196,20 @@ const [approveStep, setApproveStep] = useState("confirm"); // confirm | processi
   const { filteredItems, stats, totalPages, currentItems, startIndex, endIndex } = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
-    const filteredItems = itemsBase.filter((item) => {
-      const matchesSearch =
-        !term ||
-        item.codigo.toLowerCase().includes(term) ||
-        item.descripcion.toLowerCase().includes(term);
+// dentro del useMemo de filtros
+const filteredItems = itemsBase.filter((item) => {
+  const term = searchTerm.trim().toLowerCase();
+  const matchesSearch =
+    !term ||
+    item.codigo.toLowerCase().includes(term) ||
+    item.descripcion.toLowerCase().includes(term);
 
-      const matchesStatus = statusFilter === "todos" || item.estado === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
+  const matchesStatus =
+    statusFilter === "todos" || String(item.estadoId) === String(statusFilter);
+
+  return matchesSearch && matchesStatus;
+});
+
 
     const stats = {
       total: itemsBase.length,
@@ -364,18 +385,19 @@ const [approveStep, setApproveStep] = useState("confirm"); // confirm | processi
               className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
 
-            <select
-              value={statusFilter}
-              onChange={(e) => onStatusFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            >
-              <option value="todos">Todos los estados</option>
-              <option value="Pendiente">Pendiente</option>
-              <option value="En Revisión">En Revisión</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="En Proceso">En Proceso</option>
-              <option value="Rechazado">Rechazado</option>
-            </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => onStatusFilter(e.target.value)} // ya resetea página
+            className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="todos">Todos los estados</option>
+            {estados.map((e) => (
+              <option key={e.id} value={String(e.id)}>
+                {e.nombre}
+              </option>
+            ))}
+          </select>
+
           </div>
         </div>
 
@@ -396,6 +418,7 @@ const [approveStep, setApproveStep] = useState("confirm"); // confirm | processi
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">Cantidad</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Unidad</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Observación</th>
                   </tr>
                 </thead>
 
@@ -418,6 +441,7 @@ const [approveStep, setApproveStep] = useState("confirm"); // confirm | processi
                           {item.estado}
                         </span>
                       </td>
+                      <td className="px-6 py-4 text-gray-600 font-medium">{item.ultimaObservacion}</td>
                     </tr>
                   ))}
                 </tbody>
