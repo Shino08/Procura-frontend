@@ -147,83 +147,106 @@ export const NuevaSolicitudPage = () => {
     });
   };
 
-  // ============ GUARDAR SOLICITUD POR HOJA ============
-  const handleGuardarSolicitudHoja = async () => {
-    if (!excelData || !activeSheet) return;
+// ============ GUARDAR SOLICITUD POR HOJA ============
+const handleGuardarSolicitudHoja = async () => {
+  if (!excelData || !activeSheet) return;
 
-    const sheet = excelData[activeSheet];
-    if (!sheet?.data?.length) {
-      return showModal('error', 'Sin datos', 'La hoja no tiene materiales.');
+  const sheet = excelData[activeSheet];
+  if (!sheet?.data?.length) {
+    return showModal('error', 'Sin datos', 'La hoja no tiene materiales.');
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const userIdRaw = localStorage.getItem('userId') ?? localStorage.getItem('id');
+    const userId = Number(userIdRaw);
+
+    if (!userId || Number.isNaN(userId)) {
+      throw new Error('No hay userId válido en localStorage (userId/id).');
     }
 
-    try {
-      const token = localStorage.getItem('token');
-      const userIdRaw = localStorage.getItem('userId') ?? localStorage.getItem('id');
-      const userId = Number(userIdRaw);
+    const data = sheet.data.map(({ id, ...rest }) => rest);
 
-      if (!userId || Number.isNaN(userId)) {
-        throw new Error('No hay userId válido en localStorage (userId/id).');
-      }
+    const payload = {
+      userId,
+      solicitud: {
+        nombre: sheet.nombre ?? 'Sin nombre',
+        descripcion: `Solicitud generada desde ${file?.name ?? 'archivo'} - Hoja ${sheet.nombre ?? activeSheet}`,
+      },
+      data,
+      archivoId: archivoId ?? null,
+      totalHojas: Object.keys(excelData).length,
+      archivoNombre: file?.name,        // <- AGREGAR
+      archivoTamanio: file?.size,       // <- AGREGAR
+    };
 
-      const data = sheet.data.map(({ id, ...rest }) => rest);
+    let res;
 
-      const payload = {
-        userId,
-        solicitud: {
-          nombre: sheet.nombre ?? 'Sin nombre',
-          descripcion: `Solicitud generada desde ${file?.name ?? 'archivo'} - Hoja ${sheet.nombre ?? activeSheet}`,
+    if (!archivoId) {
+      if (!file) throw new Error('No hay archivo seleccionado para la primera hoja.');
+
+      const fd = new FormData();
+      fd.append('archivo', file);
+      fd.append('payload', JSON.stringify(payload));
+
+      res = await fetch(`${API_URL}/solicitudes`, {
+        method: 'POST',
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+        body: fd,
+      });
+    } else {
+      res = await fetch(`${API_URL}/solicitudes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
         },
-        data,
-        archivoId: archivoId ?? null,
-        totalHojas: Object.keys(excelData).length,
-      };
-
-      let res;
-
-      if (!archivoId) {
-        if (!file) throw new Error('No hay archivo seleccionado para la primera hoja.');
-
-        const fd = new FormData();
-        fd.append('archivo', file);
-        fd.append('payload', JSON.stringify(payload));
-
-        res = await fetch(`${API_URL}/solicitudes`, {
-          method: 'POST',
-          headers: { Authorization: token ? `Bearer ${token}` : '' },
-          body: fd,
-        });
-      } else {
-        res = await fetch(`${API_URL}/solicitudes`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: token ? `Bearer ${token}` : '',
-          },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `Error ${res.status} al guardar solicitud`);
-      }
-
-      const out = await res.json();
-
-      if (!archivoId && out.archivoId) {
-        setArchivoId(out.archivoId);
-      }
-
-      setSavedSheets((prev) => ({
-        ...prev,
-        [activeSheet]: { saved: true, solicitudId: out.solicitudId },
-      }));
-
-      showModal('success', 'Guardado', `Hoja "${sheet.nombre ?? activeSheet}" guardada.`);
-    } catch (e) {
-      showModal('error', 'Error', e.message);
+        body: JSON.stringify(payload),
+      });
     }
-  };
+
+    // MANEJO ESPECÍFICO DE ERRORES
+    if (!res.ok) {
+      const errorData = await res.json();
+      
+      // Detectar archivo duplicado (código 409)
+      if (res.status === 409) {
+        return showModal(
+          'error', 
+          'Archivo Duplicado', 
+          'Este archivo ya fue cargado anteriormente en el sistema. Por favor, verifica tus archivos o carga uno diferente.',
+          () => {
+            // Opcional: resetear y volver al paso 1
+            setFile(null);
+            setExcelData(null);
+            setActiveSheet(null);
+            setSavedSheets({});
+            setArchivoId(null);
+            setCurrentStep(1);
+          }
+        );
+      }
+      
+      // Otros errores
+      throw new Error(errorData.error || `Error ${res.status} al guardar solicitud`);
+    }
+
+    const out = await res.json();
+
+    if (!archivoId && out.archivoId) {
+      setArchivoId(out.archivoId);
+    }
+
+    setSavedSheets((prev) => ({
+      ...prev,
+      [activeSheet]: { saved: true, solicitudId: out.solicitudId },
+    }));
+
+    showModal('success', 'Guardado', `Hoja "${sheet.nombre ?? activeSheet}" guardada.`);
+  } catch (e) {
+    showModal('error', 'Error', e.message);
+  }
+};
 
   const handleCellEditSheet = (sheetName, id, field, value) => {
     setExcelData((prev) => ({
