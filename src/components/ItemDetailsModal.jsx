@@ -34,6 +34,9 @@ export const ItemDetailsModal = ({
   // Detectar rol (lee desde JWT para mayor seguridad)
   const [userRole, setUserRole] = useState(null);
 
+  const [deletingAdjunto, setDeletingAdjunto] = useState(null); // id del adjunto en proceso de eliminación
+
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -268,6 +271,40 @@ export const ItemDetailsModal = ({
     URL.revokeObjectURL(objectUrl);
   };
 
+  const deleteAdjunto = async (archivoId) => {
+  if (!isAdmin) return; // guard
+  if (!item?.id) return;
+
+  const confirmar = window.confirm("¿Seguro que deseas eliminar este archivo adjunto?");
+  if (!confirmar) return;
+
+  setDeletingAdjunto(archivoId);
+  setErrorAdjuntos("");
+
+  try {
+    const token = localStorage.getItem("token");
+    const url = `${API_URL}/items/${item.id}/adjuntos/${archivoId}`;
+
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || err.message || "Error al eliminar adjunto");
+    }
+
+    // Actualiza la lista local sin recargar todo
+    setAdjuntos((prev) => prev.filter((a) => a.id !== archivoId));
+  } catch (e) {
+    setErrorAdjuntos(e.message || "Error inesperado al eliminar");
+  } finally {
+    setDeletingAdjunto(null);
+  }
+};
+
+
   return (
     <>
       <Modal
@@ -436,26 +473,39 @@ export const ItemDetailsModal = ({
             ) : adjuntos.length === 0 ? (
               <p className="text-xs text-gray-500">No hay archivos adjuntos.</p>
             ) : (
-              <ul className="space-y-2">
-                {adjuntos.map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 truncate">{a.nombre}</p>
-                      {a.descripcion && <p className="text-[11px] text-gray-500 truncate">{a.descripcion}</p>}
-                    </div>
+<ul className="space-y-2">
+  {adjuntos.map((a) => (
+    <li
+      key={a.id}
+      className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-gray-800 truncate">{a.nombre}</p>
+        {a.descripcion && <p className="text-[11px] text-gray-500 truncate">{a.descripcion}</p>}
+      </div>
 
-                    <button
-                      onClick={() => download(a.id)}
-                      className="shrink-0 rounded-lg bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 hover:bg-orange-100"
-                    >
-                      Ver
-                    </button>
-                  </li>
-                ))}
-              </ul>
+      <div className="flex gap-2 shrink-0">
+        <button
+          onClick={() => download(a.id)}
+          className="rounded-lg bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 hover:bg-orange-100"
+        >
+          Ver
+        </button>
+
+        {isAdmin && (
+          <button
+            onClick={() => deleteAdjunto(a.id)}
+            disabled={deletingAdjunto === a.id}
+            className="rounded-lg bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+          >
+            {deletingAdjunto === a.id ? "..." : "Eliminar"}
+          </button>
+        )}
+      </div>
+    </li>
+  ))}
+</ul>
+
             )}
           </div>
         )}
