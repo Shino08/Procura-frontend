@@ -276,6 +276,33 @@ const download = async (archivoId) => {
   URL.revokeObjectURL(objectUrl); // libera memoria [web:538]
 };
 
+const handleDescargarPDF = async () => {
+  if (!solicitudActivaId) return;
+  
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_URL}/generar-pdf/${solicitudActivaId}`, {
+      method: 'GET',
+      headers: { Authorization: token ? `Bearer ${token}` : '' },
+    });
+
+    if (!res.ok) throw new Error(`Error ${res.status} al generar PDF`);
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Items-aprobados-${solicitudActivaId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    showModal('success', 'PDF generado', 'El reporte se descargó correctamente.');
+  } catch (e) {
+    showModal('error', 'Error', e.message);
+  }
+};
 
   if (loading) {
     return (
@@ -351,27 +378,31 @@ const download = async (archivoId) => {
 
       <main className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8 py-5 sm:py-7">
         {/* Summary */}
-        <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <p className="text-xs text-gray-500">Fecha de carga</p>
-              <p className="text-sm font-semibold text-gray-800">{formatFecha(header.fecha)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Total ítems</p>
-              <p className="text-sm font-semibold text-gray-800">{header.totalItems}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Observaciones</p>
-              <p className="text-sm font-semibold text-gray-800 line-clamp-2">{header.observaciones}</p>
-            </div>
-          </div>
+    <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="grid grid-cols-3 gap-3 text-center sm:text-left">
+        <div>
+          <p className="text-xs text-gray-500">Fecha carga</p>
+          <p className="text-sm font-semibold text-gray-800">{formatFecha(header.fecha)}</p>
         </div>
+        <div>
+          <p className="text-xs text-gray-500">Total ítems</p>
+          <p className="text-sm font-semibold text-gray-800">{header.totalItems}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Observaciones</p>
+          <p className="text-sm font-semibold text-gray-800 line-clamp-1">{header.observaciones}</p>
+        </div>
+      </div>
+    </div>
 
-        {/* Selector de hoja */}
-        {solicitudes.length > 0 && (
-          <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Solicitud / Hoja</label>
+    {/* Selector + PDF (en la misma fila) */}
+    {solicitudes.length > 0 && (
+      <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Solicitud / Hoja
+            </label>
             <select
               value={solicitudActivaId ?? ""}
               onChange={(e) => {
@@ -387,49 +418,61 @@ const download = async (archivoId) => {
               ))}
             </select>
           </div>
-        )}
 
-        {/* Stats */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {[
-            { label: "Total", value: stats.total },
-            { label: "Aprobados", value: stats.aprobados },
-            { label: "Pendientes", value: stats.pendientes },
-            { label: "En proceso", value: stats.enProceso },
-            { label: "Rechazados", value: stats.rechazados },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-4">
-              <p className="text-xs text-gray-500">{s.label}</p>
-              <p className="mt-1 text-2xl font-bold text-gray-800">{s.value}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Filters (sin tipoFilter porque tu API no trae tipo) */}
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <input
-              value={searchTerm}
-              onChange={(e) => onSearch(e.target.value)}
-              placeholder="Buscar código o descripción..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            />
-
-          <select
-            value={statusFilter}
-            onChange={(e) => onStatusFilter(e.target.value)} // ya resetea página
-            className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          <button
+            onClick={handleDescargarPDF}
+            disabled={!solicitudActivaId}
+            className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
           >
-            <option value="todos">Todos los estados</option>
-            {estados.map((e) => (
-              <option key={e.id} value={String(e.id)}>
-                {e.nombre}
-              </option>
-            ))}
-          </select>
-
-          </div>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Exportar PDF
+          </button>
         </div>
+      </div>
+    )}
+
+    {/* Stats compactos (3 columnas en móvil, 5 en desktop) */}
+    <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-5">
+      {[
+        { label: "Total", value: stats.total },
+        { label: "Aprobados", value: stats.aprobados },
+        { label: "Pendientes", value: stats.pendientes },
+        { label: "En proceso", value: stats.enProceso },
+        { label: "Rechazados", value: stats.rechazados },
+      ].map((s) => (
+        <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-3">
+          <p className="text-xs text-gray-500">{s.label}</p>
+          <p className="mt-1 text-xl sm:text-2xl font-bold text-gray-800">{s.value}</p>
+        </div>
+      ))}
+    </div>
+
+    {/* Filters compactos */}
+    <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input
+          value={searchTerm}
+          onChange={(e) => onSearch(e.target.value)}
+          placeholder="Buscar código o descripción..."
+          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) => onStatusFilter(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        >
+          <option value="todos">Todos los estados</option>
+          {estados.map((e) => (
+            <option key={e.id} value={String(e.id)}>
+              {e.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
 
         {/* Tabla responsive (única vista, sin duplicar cards) */}
         {currentItems.length === 0 ? (

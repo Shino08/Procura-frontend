@@ -1,4 +1,4 @@
-export const ITEMS_PER_PAGE = 50;
+export const ITEMS_PER_PAGE = 25;
 
 export const STATUS_CONFIG = {
   Pendiente: { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
