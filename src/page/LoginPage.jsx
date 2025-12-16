@@ -46,7 +46,6 @@ export const LoginPage = () => {
       });
 
       const data = await res.json().catch(() => ({}));
-      console.log(data);
 
       if (!res.ok) {
         openModal({
@@ -64,6 +63,7 @@ export const LoginPage = () => {
       const payload = decodeJwtPayload(data.token);
       if (payload?.rol) localStorage.setItem("userRol", payload.rol);
       if (payload?.correo) localStorage.setItem("userCorreo", payload.correo);
+      if (payload?.id) localStorage.setItem("userId", payload.id);
 
       // Ajusta la ruta según tu app:
       navigate("/dashboard");
