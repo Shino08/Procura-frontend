@@ -64,7 +64,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
         </div>
 
         {/* Aquí renderiza el componente "SolicitudesRecientes" SOLO con vista cliente */}
-        <SolicitudesRecientes token={token} role="cliente" endpoint={`${API_URL}/archivos/usuario`} verTodasLink="/solicitudes/usuario" detalleBasePath="/solicitudes/usuario/"/>
+        <SolicitudesRecientes token={token} role="cliente" endpoint={`${API_URL}/archivos/usuario`} verTodasLink="/solicitudes/usuario" detalleBasePath="/solicitudes/usuario"/>
       </main>
 
       <NotificacionesPanel

@@ -54,6 +54,8 @@ export const SolicitudesRecientes = ({
         }
 
         const data = await res.json();
+        console.log(data);
+
         const mapped = Array.isArray(data?.archivos) ? data.archivos : [];
         setRows(mapped);
       } catch (e) {
@@ -170,10 +172,10 @@ export const SolicitudesRecientes = ({
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${estadoCfg.bg} ${estadoCfg.text}`}>
-                      {s.estado}
+                      {s.totalHojas}
                     </span>
                     <span className="text-xs text-gray-500 whitespace-nowrap">
-                      {formatFecha(s.createdAt)}
+                      {formatFecha(s.fechaCreacion)}
                     </span>
                   </div>
 

@@ -142,7 +142,6 @@ export const ItemDetailsModal = ({
         }
 
         const data = await res.json();
-        console.log(data);
         const lista = Array.isArray(data?.archivos) ? data.archivos : Array.isArray(data) ? data : [];
         setAdjuntos(lista);
       } catch (e) {
@@ -316,6 +315,8 @@ setObservaciones(ordered2);
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || err.message || "Error al aprobar cotización");
       }
+
+      window.location.reload();
 
       onItemUpdated?.();
       onClose();

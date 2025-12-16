@@ -174,7 +174,7 @@ export const SolicitudesPage = () => {
                   <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-600">N° Solicitud</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-600">Archivo</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-600">Fecha</th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold uppercase text-gray-600">Ítems</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold uppercase text-gray-600">Solicitudes</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold uppercase text-gray-600">Acción</th>
                 </tr>
               </thead>

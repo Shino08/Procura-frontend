@@ -11,11 +11,10 @@ export const NuevaSolicitudPage = () => {
   const [processing, setProcessing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
-  // Datos extraídos: { [sheetName]: { name, headers, columnKeys, data: [...] } }
   const [excelData, setExcelData] = useState(null);
   const [activeSheet, setActiveSheet] = useState(null);
-  const [savedSheets, setSavedSheets] = useState({}); // { [sheetName]: { saved: true, solicitudId } }
-  const [archivoId, setArchivoId] = useState(null); // Se guarda en la primera solicitud
+  const [savedSheets, setSavedSheets] = useState({});
+  const [archivoId, setArchivoId] = useState(null);
 
   const [modal, setModal] = useState({ show: false, type: '', title: '', message: '', onConfirm: null });
 
@@ -45,7 +44,7 @@ export const NuevaSolicitudPage = () => {
     return name
       .toString()
       .trim()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, '_')
       .replace(/[^\w]/g, '_')
       .toLowerCase();
@@ -113,10 +112,9 @@ export const NuevaSolicitudPage = () => {
 
         if (formattedData.length > 0) {
           extractedData[sheetName] = {
-            name: sheetName,
+            nombre: sheetName,
             headers: headers.filter(h => h && h.toString().trim()),
             columnKeys,
-            total_records: formattedData.length,
             data: formattedData
           };
         }
@@ -136,87 +134,97 @@ export const NuevaSolicitudPage = () => {
     }
   };
 
-  // ============ GUARDAR SOLICITUD POR HOJA ============
-const handleGuardarSolicitudHoja = async () => {
-  if (!excelData || !activeSheet) return;
-
-  const sheet = excelData[activeSheet];
-  if (!sheet?.data?.length) {
-    return showModal('error', 'Sin datos', 'La hoja no tiene materiales.');
-  }
-
-  try {
-    const token = localStorage.getItem('token');
-
-    // Unificar: intenta 'userId' y cae a 'id' (según cómo lo guardes en login)
-    const userIdRaw = localStorage.getItem('userId') ?? localStorage.getItem('id');
-    const userId = Number(userIdRaw);
-
-    if (!userId || Number.isNaN(userId)) {
-      throw new Error('No hay userId válido en localStorage (userId/id).');
-    }
-
-    const data = sheet.data.map(({ id, ...rest }) => rest);
-
-    const payload = {
-      userId, // backend lee body.userId
-      solicitud: {
-        nombre: sheet.nombre ?? sheet.name ?? 'Sin nombre',
-        descripcion: `Solicitud generada desde ${file?.name ?? file?.nombre ?? 'archivo'} - Hoja ${sheet.nombre ?? sheet.name ?? activeSheet}`,
-      },
-      data,
-      archivoId: archivoId ?? null, // explícito
-    };
-
-    let res;
-
-    // Primera hoja: enviar archivo físico con FormData (fieldname debe ser 'archivo')
-    if (!archivoId) {
-      if (!file) throw new Error('No hay archivo seleccionado para la primera hoja.');
-
-      const fd = new FormData();
-      fd.append('archivo', file);              // <= debe calzar con upload.single('archivo')
-      fd.append('payload', JSON.stringify(payload));
-
-      res = await fetch(`${API_URL}/solicitudes`, {
-        method: 'POST',
-        headers: { Authorization: token ? `Bearer ${token}` : '' },
-        body: fd,
-      });
-    } else {
-      // Siguientes hojas: solo JSON
-      res = await fetch(`${API_URL}/solicitudes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
+  // ============ ELIMINAR FILA ============
+  const handleEliminarFila = (sheetName, id) => {
+    showModal('confirm', 'Eliminar fila', '¿Seguro que deseas eliminar esta fila?', () => {
+      setExcelData((prev) => ({
+        ...prev,
+        [sheetName]: {
+          ...prev[sheetName],
+          data: prev[sheetName].data.filter((row) => row.id !== id),
         },
-        body: JSON.stringify(payload),
-      });
+      }));
+    });
+  };
+
+  // ============ GUARDAR SOLICITUD POR HOJA ============
+  const handleGuardarSolicitudHoja = async () => {
+    if (!excelData || !activeSheet) return;
+
+    const sheet = excelData[activeSheet];
+    if (!sheet?.data?.length) {
+      return showModal('error', 'Sin datos', 'La hoja no tiene materiales.');
     }
 
-    if (!res.ok) throw new Error(`Error ${res.status} al guardar solicitud`);
+    try {
+      const token = localStorage.getItem('token');
+      const userIdRaw = localStorage.getItem('userId') ?? localStorage.getItem('id');
+      const userId = Number(userIdRaw);
 
-    const out = await res.json();
+      if (!userId || Number.isNaN(userId)) {
+        throw new Error('No hay userId válido en localStorage (userId/id).');
+      }
 
-    // Guardar archivoId global de la primera hoja (o si el backend lo devuelve por alguna razón)
-    if (!archivoId && out.archivoId) {
-      setArchivoId(out.archivoId);
+      const data = sheet.data.map(({ id, ...rest }) => rest);
+
+      const payload = {
+        userId,
+        solicitud: {
+          nombre: sheet.nombre ?? 'Sin nombre',
+          descripcion: `Solicitud generada desde ${file?.name ?? 'archivo'} - Hoja ${sheet.nombre ?? activeSheet}`,
+        },
+        data,
+        archivoId: archivoId ?? null,
+        totalHojas: Object.keys(excelData).length,
+      };
+
+      let res;
+
+      if (!archivoId) {
+        if (!file) throw new Error('No hay archivo seleccionado para la primera hoja.');
+
+        const fd = new FormData();
+        fd.append('archivo', file);
+        fd.append('payload', JSON.stringify(payload));
+
+        res = await fetch(`${API_URL}/solicitudes`, {
+          method: 'POST',
+          headers: { Authorization: token ? `Bearer ${token}` : '' },
+          body: fd,
+        });
+      } else {
+        res = await fetch(`${API_URL}/solicitudes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `Error ${res.status} al guardar solicitud`);
+      }
+
+      const out = await res.json();
+
+      if (!archivoId && out.archivoId) {
+        setArchivoId(out.archivoId);
+      }
+
+      setSavedSheets((prev) => ({
+        ...prev,
+        [activeSheet]: { saved: true, solicitudId: out.solicitudId },
+      }));
+
+      showModal('success', 'Guardado', `Hoja "${sheet.nombre ?? activeSheet}" guardada.`);
+    } catch (e) {
+      showModal('error', 'Error', e.message);
     }
+  };
 
-    setSavedSheets((prev) => ({
-      ...prev,
-      [activeSheet]: { saved: true, solicitudId: out.solicitudId },
-    }));
-
-    showModal('success', 'Guardado', `Hoja "${sheet.nombre ?? sheet.name ?? activeSheet}" guardada.`);
-  } catch (e) {
-    showModal('error', 'Error', e.message);
-  }
-};
-
-
-  // ============ EDITAR CELDA ============
   const handleCellEditSheet = (sheetName, id, field, value) => {
     setExcelData((prev) => ({
       ...prev,
@@ -229,7 +237,6 @@ const handleGuardarSolicitudHoja = async () => {
     }));
   };
 
-  // ============ RESETEAR ============
   const handleResetear = () => {
     showModal('confirm', 'Cargar nuevo archivo?', 'Se perderán cambios no guardados.', () => {
       setFile(null);
@@ -241,7 +248,6 @@ const handleGuardarSolicitudHoja = async () => {
     });
   };
 
-  // ============ FINALIZAR ============
   const handleFinalizar = () => {
     const savedCount = Object.keys(savedSheets).filter(name => savedSheets[name]?.saved).length;
     if (savedCount === 0) {
@@ -250,7 +256,6 @@ const handleGuardarSolicitudHoja = async () => {
     showModal('success', 'Completado', `Se guardaron ${savedCount} solicitudes.`, () => navigate('/dashboard'));
   };
 
-  // ============ DRAG & DROP ============
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -285,7 +290,6 @@ const handleGuardarSolicitudHoja = async () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
           <div className="flex items-center gap-3">
@@ -300,7 +304,6 @@ const handleGuardarSolicitudHoja = async () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* PASO 1: Upload */}
         {currentStep === 1 && (
           <div className="bg-white rounded-xl border-2 border-gray-200 p-6 sm:p-8 shadow-sm">
             <div className="text-center mb-6">
@@ -373,10 +376,8 @@ const handleGuardarSolicitudHoja = async () => {
           </div>
         )}
 
-        {/* PASO 2: Edición */}
         {currentStep === 2 && excelData && activeSheet && (
           <div className="space-y-4">
-            {/* Tabs */}
             <div className="flex border-b border-gray-300 overflow-x-auto">
               {Object.keys(excelData).map((sheetName) => (
                 <button
@@ -395,12 +396,12 @@ const handleGuardarSolicitudHoja = async () => {
               {activeSheet} ({excelData[activeSheet].data.length} registros)
             </h2>
 
-            {/* Tabla dinámica */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto max-h-[480px]">
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gradient-to-r from-gray-700 to-gray-600 text-white text-left sticky top-0">
+                      <th className="px-4 py-3 text-sm font-semibold whitespace-nowrap">Acciones</th>
                       {excelData[activeSheet].headers.map((header, idx) => (
                         <th key={idx} className="px-4 py-3 text-sm font-semibold whitespace-nowrap">
                           {header}
@@ -411,6 +412,17 @@ const handleGuardarSolicitudHoja = async () => {
                   <tbody>
                     {excelData[activeSheet].data.map((row) => (
                       <tr key={row.id} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-2">
+                          <button
+                            onClick={() => handleEliminarFila(activeSheet, row.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                            title="Eliminar fila"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </td>
                         {excelData[activeSheet].columnKeys.map((key, idx) => (
                           <td key={idx} className="px-4 py-2">
                             <input
@@ -428,7 +440,6 @@ const handleGuardarSolicitudHoja = async () => {
               </div>
             </div>
 
-            {/* Acciones */}
             <div className="flex justify-between gap-3">
               <button onClick={handleResetear} className="px-5 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50">
                 Cargar otro archivo
@@ -450,7 +461,6 @@ const handleGuardarSolicitudHoja = async () => {
         )}
       </main>
 
-      {/* Modal */}
       {modal.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
