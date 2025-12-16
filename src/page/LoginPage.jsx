@@ -82,7 +82,7 @@ export const LoginPage = () => {
 return (
   <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-50 p-4 sm:p-6">
     {/* Contenedor tipo "card" grande, dos paneles */}
-    <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl lg:grid-cols-2">
+    <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl lg:grid-cols-2">
       {/* Panel izquierdo */}
       <section className="relative bg-[#f15a29] p-6 text-white sm:p-10 hidden sm:block">
         {/* Decoración sutil */}
