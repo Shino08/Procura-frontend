@@ -72,7 +72,7 @@ export const ItemDetailsModal = ({
 
   const roleNormalized = (userRole || "").trim().toLowerCase();
   const isAdmin = roleNormalized === "administrador";
-  const isUser = roleNormalized === "gerente" || roleNormalized === "usuario";
+  const isUser = roleNormalized === "procura" || roleNormalized === "usuario";
 
   // Scroll automático al final del chat
   useEffect(() => {
