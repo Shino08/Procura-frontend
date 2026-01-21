@@ -9,7 +9,7 @@ import { API_URL } from "../services";
 import { formatFecha } from "../utils/solicitudesUi";
 
 /* ----------------------------- UI configs ----------------------------- */
-
+ 
 const STATUS_CONFIG = {
   Pendiente: { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500", border: "border-yellow-300" },
   "En Revisión": { bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500", border: "border-blue-300" },
