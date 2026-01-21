@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ModalConfirm } from "../components/ModalConfirm";
 import { ItemDetailsModal } from "../components/ItemDetailsModal";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { ResultModal } from "../components/ResultModal";
-
 import { API_URL } from "../services";
 import { formatFecha } from "../utils/solicitudesUi";
 
 /* ----------------------------- UI configs ----------------------------- */
- 
 const STATUS_CONFIG = {
   Pendiente: { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500", border: "border-yellow-300" },
   "En Revisión": { bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500", border: "border-blue-300" },
   Aprobado: { bg: "bg-green-100", text: "text-green-700", dot: "bg-green-500", border: "border-green-300" },
-
   "En Compra": { bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500", border: "border-orange-300" },
   Recibido: { bg: "bg-emerald-100", text: "text-emerald-700", dot: "bg-emerald-500", border: "border-emerald-300" },
   Cancelado: { bg: "bg-red-100", text: "text-red-700", dot: "bg-red-500", border: "border-red-300" },
@@ -22,18 +19,9 @@ const STATUS_CONFIG = {
 
 const DEFAULT_STATUS = STATUS_CONFIG.Pendiente;
 const getStatusCfg = (estado) => STATUS_CONFIG[estado] || DEFAULT_STATUS;
-
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
 /* ----------------------------- Data mapping ---------------------------- */
-/**
- * Backend: { file, solicitudes }
- * solicitudes: array de Solicitud, cada una con items[] y estado (relación) incluida. [web:175]
- *
- * Esta función normaliza para la tabla:
- * - hoja/solicitud (para selector)
- * - filas aplanadas por solicitud activa
- */
 const mapApiToUi = (api) => {
   const file = api?.file || null;
   const solicitudes = Array.isArray(api?.solicitudes) ? api.solicitudes : [];
@@ -50,71 +38,48 @@ const mapApiToUi = (api) => {
 const getItemEstadoNombre = (item) => item?.estado?.nombre || item?.estado || item?.estadoNombre || "Pendiente";
 
 /* -------------------------------- Page -------------------------------- */
-
 export const GestionSolicitudesDetallesPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // id del archivo
+  const { id } = useParams();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [file, setFile] = useState(null);
   const [solicitudes, setSolicitudes] = useState([]);
   const [solicitudActivaId, setSolicitudActivaId] = useState(null);
-
   const [searchTerm, setSearchTerm] = useState("");
-
   const [guardando, setGuardando] = useState(false);
-  const [modal, setModal] = useState({ type: null }); // null | save | discard | success | error
+  const [modal, setModal] = useState({ type: null });
 
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeTab, setActiveTab] = useState("general");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [approveStep, setApproveStep] = useState("confirm");
+  const [estados, setEstados] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("todos");
 
-const [saveOpen, setSaveOpen] = useState(false);
-const [discardOpen, setDiscardOpen] = useState(false);
-const [successOpen, setSuccessOpen] = useState(false);
-const [errorOpen, setErrorOpen] = useState(false);
-
-const [estados, setEstados] = useState([]);        // [{id, nombre}]
-const [statusFilter, setStatusFilter] = useState("todos"); // ahora guardará id o "todos"
-
-useEffect(() => {
-  const controller = new AbortController();
-
-  (async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/estados`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-        signal: controller.signal,
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setEstados(Array.isArray(data) ? data : []);
-    } catch (_) {}
-  })();
-
-  return () => controller.abort();
-}, []);
-
-
-const openItem = (item) => {
-  setSelectedItem(item);
-  setActiveTab("general");
-  setItemModalOpen(true);
-};
-
-const closeItemModal = () => {
-  setItemModalOpen(false);
-  setSelectedItem(null);
-};
-
-  // snapshot original para detectar cambios
   const originalRef = useRef(null);
 
+  // Fetch estados
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/estados`, {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setEstados(Array.isArray(data) ? data : []);
+      } catch (_) {}
+    })();
+    return () => controller.abort();
+  }, []);
+
+  // Fetch detalles del archivo
   useEffect(() => {
     if (!id) return;
 
@@ -126,8 +91,7 @@ const closeItemModal = () => {
         setError("");
 
         const token = localStorage.getItem("token");
-
-        const res = await fetch(`http://localhost:3000/api/archivos/detalles/${id}`, {
+        const res = await fetch(`${API_URL}/archivos/detalles/${id}`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
           signal: controller.signal,
         });
@@ -145,8 +109,6 @@ const closeItemModal = () => {
 
         const firstId = mapped.menuSolicitudes[0]?.id ?? null;
         setSolicitudActivaId(firstId);
-
-        // guardar snapshot original (para descartar / detectar cambios)
         originalRef.current = deepClone(mapped.menuSolicitudes);
       } catch (e) {
         if (e.name !== "AbortError") setError(e.message || "Error inesperado");
@@ -163,56 +125,53 @@ const closeItemModal = () => {
     return solicitudes.find((s) => String(s.id) === String(solicitudActivaId)) || null;
   }, [solicitudes, solicitudActivaId]);
 
-  // Normaliza filas de la solicitud activa a un shape estable para tabla
-const rows = useMemo(() => {
-  const items = solicitudActiva?.items || [];
-  return items.map((it, idx) => {
-    const estadoId = it?.estado?.id ?? null;
-    const estadoNombre = it?.estado?.nombre ?? getItemEstadoNombre(it);
+  const rows = useMemo(() => {
+    const items = solicitudActiva?.items || [];
+    return items.map((it, idx) => {
+      const estadoId = it?.estado?.id ?? null;
+      const estadoNombre = it?.estado?.nombre ?? getItemEstadoNombre(it);
 
-    return {
-      id: it.id,
-      linea: idx + 1,
-      codigo: String(it.codigo || it.sku || "-"),
-      descripcion: String(it.descripcion || "-"),
-      cantidadTotal: it.cantidadTotal ?? it.cantidad ?? 0,
-      unidad: it.unidad || "-",
-      tipo: it.tipo || "-",
-      estadoId,                 // <-- CLAVE para el filtro
-      estado: estadoNombre,     // <-- lo que muestras en tabla/badge
-      ultimaObservacion: it?.ultimaObservacion?.observacion || "",
+      return {
+        id: it.id,
+        linea: idx + 1,
+        codigo: String(it.codigo || it.sku || "-"),
+        descripcion: String(it.descripcion || "-"),
+        cantidadTotal: it.cantidadTotal ?? it.cantidad ?? 0,
+        unidad: it.unidad || "-",
+        tipo: it.tipo || "-",
+        estadoId,
+        estado: estadoNombre,
+        ultimaObservacion: it?.ultimaObservacion?.observacion || "",
+      };
+    });
+  }, [solicitudActiva]);
+
+  const { filteredRows, stats } = useMemo(() => {
+    const term = (searchTerm || "").trim().toLowerCase();
+
+    const filteredRows = rows.filter((r) => {
+      const matchesSearch =
+        !term ||
+        (r.codigo || "").toLowerCase().includes(term) ||
+        (r.descripcion || "").toLowerCase().includes(term);
+
+      const matchesStatus =
+        statusFilter === "todos" || String(r.estadoId) === String(statusFilter);
+
+      return matchesSearch && matchesStatus;
+    });
+
+    const stats = {
+      total: rows.length,
+      aprobados: rows.filter((r) => r.estado === "Aprobado").length,
+      pendientes: rows.filter((r) => r.estado === "Pendiente" || r.estado === "En Revisión").length,
+      enProceso: rows.filter((r) => r.estado === "En Proceso").length,
+      rechazados: rows.filter((r) => r.estado === "Rechazado").length,
     };
-  });
-}, [solicitudActiva]);
 
-const { filteredRows, stats } = useMemo(() => {
-  const term = (searchTerm || "").trim().toLowerCase();
+    return { filteredRows, stats };
+  }, [rows, searchTerm, statusFilter]);
 
-  const filteredRows = rows.filter((r) => {
-    const matchesSearch =
-      !term ||
-      (r.codigo || "").toLowerCase().includes(term) ||
-      (r.descripcion || "").toLowerCase().includes(term);
-
-    const matchesStatus =
-      statusFilter === "todos" || String(r.estadoId) === String(statusFilter);
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const stats = {
-    total: rows.length,
-    aprobados: rows.filter((r) => r.estado === "Aprobado").length,
-    pendientes: rows.filter((r) => r.estado === "Pendiente" || r.estado === "En Revisión").length,
-    enProceso: rows.filter((r) => r.estado === "En Proceso").length,
-    rechazados: rows.filter((r) => r.estado === "Rechazado").length,
-  };
-
-  return { filteredRows, stats };
-}, [rows, searchTerm, statusFilter]);
-
-
-  // Cambios: compara current vs snapshot original
   const hayCambios = useMemo(() => {
     if (!originalRef.current) return false;
     return JSON.stringify(solicitudes) !== JSON.stringify(originalRef.current);
@@ -231,8 +190,10 @@ const { filteredRows, stats } = useMemo(() => {
   };
 
   const onChangeEstado = (itemId, nuevoEstadoNombre) => {
-    // guardamos como campo plano para UI; al guardar se traduce a lo que pida el backend
-    updateItemInSolicitudActiva(itemId, { estado: { ...(typeof nuevoEstadoNombre === "string" ? { nombre: nuevoEstadoNombre } : {}) }, estadoNombre: nuevoEstadoNombre });
+    updateItemInSolicitudActiva(itemId, {
+      estado: { ...(typeof nuevoEstadoNombre === "string" ? { nombre: nuevoEstadoNombre } : {}) },
+      estadoNombre: nuevoEstadoNombre
+    });
   };
 
   const onChangeObs = (itemId, observacion) => {
@@ -250,7 +211,6 @@ const { filteredRows, stats } = useMemo(() => {
     setGuardando(true);
 
     try {
-      // 1) calcular diffs (solo lo modificado)
       const original = originalRef.current || [];
       const current = solicitudes;
 
@@ -273,7 +233,6 @@ const { filteredRows, stats } = useMemo(() => {
         }
       }
 
-      // 2) si no hay diffs, no hagas request
       if (diffs.length === 0) {
         setModal({ type: "success" });
         return;
@@ -281,13 +240,9 @@ const { filteredRows, stats } = useMemo(() => {
 
       const token = localStorage.getItem("token");
 
-      // TODO: reemplaza por tu endpoint real.
-      // Recomendación: endpoint batch para evitar N requests.
-      // await fetch(`http://localhost:3000/api/archivos/${id}/items`, { method: "PUT", body: JSON.stringify({ diffs }) ... })
-
       await Promise.all(
         diffs.map((d) =>
-          fetch(`http://localhost:3000/api/items/${d.itemId}`, {
+          fetch(`${API_URL}/items/${d.itemId}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -306,7 +261,6 @@ const { filteredRows, stats } = useMemo(() => {
         )
       );
 
-      // 3) commit snapshot
       originalRef.current = deepClone(solicitudes);
       setModal({ type: "success" });
     } catch (e) {
@@ -316,17 +270,28 @@ const { filteredRows, stats } = useMemo(() => {
     }
   };
 
+  const openItem = (item) => {
+    setSelectedItem(item);
+    setActiveTab("general");
+    setItemModalOpen(true);
+  };
+
+  const closeItemModal = () => {
+    setItemModalOpen(false);
+    setSelectedItem(null);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen grid place-items-center bg-gray-50">
-        <p className="text-sm text-gray-600">Cargando...</p>
+      <div className="min-h-screen grid place-items-center bg-gray-100">
+        <p className="text-sm text-gray-600">Cargando detalles...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen grid place-items-center bg-gray-50 p-4">
+      <div className="min-h-screen grid place-items-center bg-gray-100 p-4">
         <div className="w-full max-w-md rounded-xl border border-red-200 bg-white p-5">
           <p className="text-sm font-semibold text-red-600">Error</p>
           <p className="mt-1 text-xs text-gray-600">{error}</p>
@@ -335,214 +300,248 @@ const { filteredRows, stats } = useMemo(() => {
     );
   }
 
+  const statsCards = [
+    { label: "Total Ítems", value: stats.total, color: "orange", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+    { label: "Aprobados", value: stats.aprobados, color: "green", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+    { label: "Pendientes", value: stats.pendientes, color: "blue", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+    { label: "En Proceso", value: stats.enProceso, color: "purple", icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" },
+    { label: "Rechazados", value: stats.rechazados, color: "red", icon: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" },
+  ];
+
+  const colorClasses = {
+    orange: "bg-orange-50 text-orange-500",
+    green: "bg-green-50 text-green-500",
+    blue: "bg-blue-50 text-blue-500",
+    purple: "bg-purple-50 text-purple-500",
+    red: "bg-red-50 text-red-500",
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8">
-          <div className="flex h-14 items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <button
-                onClick={() => navigate("/solicitudes/admin")}
-                className="rounded-lg p-2 hover:bg-gray-100"
-                aria-label="Volver"
-              >
-                <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      <header className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-orange-500 rounded flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
                 </svg>
-              </button>
-
-              <div className="min-w-0">
-                <h1 className="truncate text-sm sm:text-base lg:text-xl font-bold text-gray-800">
-                  Archivo #{file?.id ?? id}
-                </h1>
-                <p className="hidden sm:block truncate text-xs text-gray-500">
-                  {file?.sourcefile || file?.nombreArchivo || "-"}
-                </p>
               </div>
-
-              {hayCambios ? (
-                <span className="ml-1 hidden md:inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 border border-orange-200">
-                  <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-                  Cambios sin guardar
-                </span>
-              ) : null}
+              <div>
+                <div className="text-sm font-bold text-gray-800">Sistema Procura</div>
+                <div className="text-xs text-gray-600">B&D - Admin</div>
+              </div>
             </div>
-
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:from-orange-600 hover:to-orange-700"
-            >
-              Dashboard
-            </button>
           </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("userCorreo");
+              localStorage.removeItem("userRol");
+              navigate("/login");
+            }}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded text-sm flex items-center space-x-2"
+          >
+            <span>Cerrar sesión</span>
+          </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8 py-5 pb-28 sm:pb-24">
-        {/* Info + selector solicitud */}
-        <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <p className="text-xs text-gray-500">Fecha de carga</p>
-              <p className="text-sm font-semibold text-gray-800">{formatFecha(file?.fechaCreacion || file?.fechaCreacion)}</p>
+      {/* Breadcrumb */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-sm">
+              <span className="text-orange-500">🏠</span>
+              <span className="text-gray-400">/</span>
+              <Link to="/solicitudes/admin" className="text-gray-600 hover:text-gray-900">Solicitudes</Link>
+              <span className="text-gray-400">/</span>
+              <span className="text-gray-900 font-medium">Detalle #{file?.id ?? id}</span>
             </div>
+            {hayCambios && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 border border-orange-200">
+                <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                Cambios sin guardar
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
 
-            <div className="sm:col-span-2">
-              <p className="text-xs text-gray-500">Solicitud / Hoja</p>
+      {/* Main Content */}
+      <main className="container mx-auto px-6 py-6">
+        {/* Page Title */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Detalle de Solicitud</h1>
+          <p className="text-sm text-gray-600">{file?.nombre || `Archivo #${file?.id ?? id}`}</p>
+        </div>
+
+        {/* Stats Cards Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          {statsCards.map((stat, idx) => (
+            <div key={idx} className="bg-white rounded-lg shadow-sm p-5">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 mb-1">{stat.label}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                </div>
+                <div className={`${colorClasses[stat.color]} p-2 rounded-lg`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon}/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Info + Search */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* File Info */}
+          <div className="bg-white rounded-lg shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Información del Archivo</h3>
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs text-gray-500">Fecha de carga</p>
+                <p className="text-sm font-semibold text-gray-800">{formatFecha(file?.fechaCreacion)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total ítems</p>
+                <p className="text-sm font-semibold text-gray-800">{stats.total}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Search + Filter */}
+          <div className="bg-white rounded-lg shadow-sm p-5">
+            <div className="space-y-3">
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar ítem..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
               <select
-                value={solicitudActivaId ?? ""}
-                onChange={(e) => setSolicitudActivaId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
               >
-                {solicitudes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nombre} ({(s.items || []).length})
-                  </option>
+                <option value="todos">Todos los estados</option>
+                {estados.map((e) => (
+                  <option key={e.id} value={String(e.id)}>{e.nombre}</option>
                 ))}
               </select>
             </div>
           </div>
         </div>
 
-        {/* Stats compactas */}
-        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {[
-            ["Total", stats.total],
-            ["Aprob.", stats.aprobados],
-            ["Pend.", stats.pendientes],
-            ["Proceso", stats.enProceso],
-            ["Rech.", stats.rechazados],
-          ].map(([label, val]) => (
-            <div key={label} className="rounded-xl border border-gray-200 bg-white p-4">
-              <p className="text-xs text-gray-500">{label}</p>
-              <p className="mt-1 text-xl font-bold text-gray-800">{val}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Filtros */}
-        <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar código o descripción..."
-                className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-
+        {/* Solicitud Selector */}
+        {solicitudes.length > 1 && (
+          <div className="mb-6 bg-white rounded-lg shadow-sm p-5">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Solicitud / Hoja
+            </label>
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              value={solicitudActivaId ?? ""}
+              onChange={(e) => setSolicitudActivaId(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
-              <option value="todos">Todos los estados</option>
-              {estados.map((e) => (
-                <option key={e.id} value={String(e.id)}>
-                  {e.nombre}
+              {solicitudes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre} ({(s.items || []).length} ítems)
                 </option>
               ))}
             </select>
-
-          </div>
-        </div>
-
-        {/* Tabla responsive */}
-        {filteredRows.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-600">
-            No se encontraron ítems con los filtros aplicados.
-          </div>
-        ) : (
-          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            <div className="overflow-x-auto" /* responsive scroll */>
-              <table className="min-w-[980px] w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">#</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Código</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Descripción</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase text-gray-600">Cant.</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Unidad</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Estado</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600">Obs. admin</th>
-                  </tr>
-                </thead>
-
-<tbody className="divide-y divide-gray-200">
-  {filteredRows.map((r) => {
-    const status = getStatusCfg(r.estado);
-
-    return (
-      <tr
-        key={r.id}
-        className="hover:bg-gray-50 cursor-pointer"
-        onClick={() => openItem(r)}
-      >
-        <td className="px-4 py-3 text-gray-600 font-medium">{r.linea}</td>
-
-        <td className="px-4 py-3">
-          <span className="font-mono text-xs text-gray-700">{r.codigo}</span>
-        </td>
-
-        <td className="px-4 py-3 text-gray-800 max-w-[520px]">
-          <span className="line-clamp-2">{r.descripcion}</span>
-        </td>
-
-        <td className="px-4 py-3 text-right font-semibold text-gray-800">{r.cantidadTotal}</td>
-
-        <td className="px-4 py-3 text-gray-600">{r.unidad}</td>
-
-        {/* Estado (solo visual) */}
-        <td className="px-4 py-3">
-          <span
-            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${status.bg} ${status.text}`}
-          >
-            <span className={`h-2 w-2 rounded-full ${status.dot}`} />
-            {r.estado}
-          </span>
-        </td>
-
-        {/* Observación (solo visual) */}
-        <td className="px-4 py-3 text-gray-600 text-xs max-w-xs truncate">
-          {r.ultimaObservacion || r.observacion}
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
-
-              </table>
-            </div>
           </div>
         )}
+
+        {/* Items Table */}
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-lg font-bold text-gray-900">Ítems de la Solicitud</h2>
+            <p className="text-sm text-gray-600">{filteredRows.length} ítem{filteredRows.length !== 1 ? 's' : ''} encontrado{filteredRows.length !== 1 ? 's' : ''}</p>
+          </div>
+
+          {filteredRows.length === 0 ? (
+            <div className="p-10 text-center text-sm text-gray-600">
+              No se encontraron ítems con los filtros aplicados.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">#</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">CÓDIGO</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">DESCRIPCIÓN</th>
+                    <th className="text-right py-3 px-4 text-xs font-semibold text-gray-600 uppercase">CANTIDAD</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">UNIDAD</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">ESTADO</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">OBSERVACIÓN</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredRows.map((r) => {
+                    const status = getStatusCfg(r.estado);
+                    return (
+                      <tr
+                        key={r.id}
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => openItem(r)}
+                      >
+                        <td className="py-4 px-4 text-sm text-gray-900 font-medium">{r.linea}</td>
+                        <td className="py-4 px-4 text-sm font-mono text-gray-700">{r.codigo}</td>
+                        <td className="py-4 px-4 text-sm text-gray-800 max-w-md truncate" title={r.descripcion}>
+                          {r.descripcion}
+                        </td>
+                        <td className="py-4 px-4 text-sm text-gray-900 text-right font-semibold">{r.cantidadTotal}</td>
+                        <td className="py-4 px-4 text-sm text-gray-600">{r.unidad}</td>
+                        <td className="py-4 px-4">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${status.bg} ${status.text}`}>
+                            <span className={`h-2 w-2 rounded-full ${status.dot}`} />
+                            {r.estado}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-sm text-gray-600 max-w-xs truncate">
+                          {r.ultimaObservacion || r.observacion || "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </main>
 
-      {/* Bottom Bar */}
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 mt-12">
+        <div className="container mx-auto px-6 py-6 text-center text-sm text-gray-600">
+          <p>© 2026 Sistema Procura - Business & Development. Todos los derechos reservados.</p>
+        </div>
+      </footer>
+
+      {/* Bottom Bar for Changes */}
       {hayCambios ? (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-orange-200 bg-white shadow-2xl">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4 lg:px-8">
+          <div className="container mx-auto flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-800 truncate">Cambios sin guardar</p>
+              <p className="text-sm font-semibold text-gray-800">Cambios sin guardar</p>
               <p className="hidden sm:block text-xs text-gray-600">Guarda o descarta antes de salir.</p>
             </div>
-
             <div className="flex w-full gap-2 sm:w-auto">
               <button
                 onClick={() => setModal({ type: "discard" })}
-                className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 text-xs sm:text-sm font-semibold text-gray-800 hover:bg-gray-200 sm:flex-none"
+                className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-200 sm:flex-none"
               >
                 Descartar
               </button>
-
               <button
                 onClick={() => setModal({ type: "save" })}
                 disabled={guardando}
-                className="flex-1 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:from-green-600 hover:to-green-700 disabled:opacity-50 sm:flex-none"
+                className="flex-1 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-green-600 hover:to-green-700 disabled:opacity-50 sm:flex-none"
               >
                 {guardando ? "Guardando..." : "Guardar"}
               </button>
@@ -551,64 +550,60 @@ const { filteredRows, stats } = useMemo(() => {
         </div>
       ) : null}
 
-<ItemDetailsModal
-  open={itemModalOpen}
-  item={selectedItem}
-  activeTab={activeTab}
-  setActiveTab={setActiveTab}
-  onClose={closeItemModal}
-  onItemUpdated={() => {
-    // opcional: refrescar todo el archivo para ver los cambios
-    window.location.reload(); // o llama fetchDetails() de nuevo
-  }}
-  approvingDisabled={false}
-/>
+      {/* Modals */}
+      <ItemDetailsModal
+        open={itemModalOpen}
+        item={selectedItem}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onClose={closeItemModal}
+        onItemUpdated={() => window.location.reload()}
+        approvingDisabled={false}
+      />
 
-<ModalConfirm
-  open={confirmOpen}
-  item={selectedItem}
-  step={approveStep}
-  onCancel={() => setConfirmOpen(false)}
-/>
+      <ModalConfirm
+        open={confirmOpen}
+        item={selectedItem}
+        step={approveStep}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
+      <ConfirmModal
+        open={modal.type === "save"}
+        tone="success"
+        title="¿Guardar cambios?"
+        description="Se actualizarán los ítems modificados."
+        confirmText="Guardar"
+        loading={guardando}
+        onCancel={() => setModal({ type: null })}
+        onConfirm={guardarCambios}
+      />
 
-  <ConfirmModal
-  open={saveOpen}
-  tone="success"
-  title="¿Guardar cambios?"
-  description="Se actualizarán los ítems modificados."
-  confirmText="Guardar"
-  loading={guardando}
-  onCancel={() => setSaveOpen(false)}
-  onConfirm={guardarCambios}
-/>
+      <ConfirmModal
+        open={modal.type === "discard"}
+        tone="danger"
+        title="¿Descartar cambios?"
+        description="Se perderán las modificaciones no guardadas."
+        confirmText="Descartar"
+        onCancel={() => setModal({ type: null })}
+        onConfirm={descartarCambios}
+      />
 
-<ConfirmModal
-  open={discardOpen}
-  tone="danger"
-  title="¿Descartar cambios?"
-  description="Se perderán las modificaciones no guardadas."
-  confirmText="Descartar"
-  onCancel={() => setDiscardOpen(false)}
-  onConfirm={descartarCambios}
-/>
+      <ResultModal
+        open={modal.type === "success"}
+        tone="success"
+        title="Operación exitosa"
+        description="Acción completada correctamente."
+        onClose={() => setModal({ type: null })}
+      />
 
-<ResultModal
-  open={successOpen}
-  tone="success"
-  title="Operación exitosa"
-  description="Acción completada correctamente."
-  onClose={() => setSuccessOpen(false)}
-/>
-
-<ResultModal
-  open={errorOpen}
-  tone="danger"
-  title="Error"
-  description="Ocurrió un error. Intenta nuevamente."
-  onClose={() => setErrorOpen(false)}
-/>
-
+      <ResultModal
+        open={modal.type === "error"}
+        tone="danger"
+        title="Error"
+        description={modal.message || "Ocurrió un error. Intenta nuevamente."}
+        onClose={() => setModal({ type: null })}
+      />
     </div>
   );
 };
