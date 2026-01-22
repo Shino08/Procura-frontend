@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { API_URL } from '../services';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { Breadcrumb } from '../components/Breadcrumb';
+import { InlineSpinner } from '../components/LoadingSpinner';
 
 export const NuevaSolicitudPage = () => {
   const navigate = useNavigate();
@@ -17,12 +18,14 @@ export const NuevaSolicitudPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [guardando, setGuardando] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
   const [excelData, setExcelData] = useState(null);
   const [activeSheet, setActiveSheet] = useState(null);
   const [savedSheets, setSavedSheets] = useState({});
   const [archivoId, setArchivoId] = useState(null);
+  const [selectedRows, setSelectedRows] = useState([]);
 
   const [modal, setModal] = useState({ show: false, type: '', title: '', message: '', onConfirm: null });
 
@@ -165,6 +168,8 @@ const handleGuardarSolicitudHoja = async () => {
   }
 
   try {
+    setGuardando(true);
+
     const token = localStorage.getItem('token');
     const userIdRaw = localStorage.getItem('userId') ?? localStorage.getItem('id');
     const userId = Number(userIdRaw);
@@ -216,12 +221,12 @@ const handleGuardarSolicitudHoja = async () => {
     // MANEJO ESPECÍFICO DE ERRORES
     if (!res.ok) {
       const errorData = await res.json();
-      
+
       // Detectar archivo duplicado (código 409)
       if (res.status === 409) {
         return showModal(
-          'error', 
-          'Archivo Duplicado', 
+          'error',
+          'Archivo Duplicado',
           'Este archivo ya fue cargado anteriormente en el sistema. Por favor, verifica tus archivos o carga uno diferente.',
           () => {
             // Opcional: resetear y volver al paso 1
@@ -234,7 +239,7 @@ const handleGuardarSolicitudHoja = async () => {
           }
         );
       }
-      
+
       // Otros errores
       throw new Error(errorData.error || `Error ${res.status} al guardar solicitud`);
     }
@@ -253,6 +258,8 @@ const handleGuardarSolicitudHoja = async () => {
     showModal('success', 'Guardado', `Hoja "${sheet.nombre ?? activeSheet}" guardada.`);
   } catch (e) {
     showModal('error', 'Error', e.message);
+  } finally {
+    setGuardando(false);
   }
 };
 
@@ -267,6 +274,45 @@ const handleGuardarSolicitudHoja = async () => {
       },
     }));
   };
+
+  // ============ SELECCIÓN MÚLTIPLE ============
+  const handleToggleRow = (rowId) => {
+    setSelectedRows((prev) =>
+      prev.includes(rowId) ? prev.filter((id) => id !== rowId) : [...prev, rowId]
+    );
+  };
+
+  const handleToggleAll = () => {
+    const currentRowIds = excelData[activeSheet]?.data?.map((r) => r.id) || [];
+    setSelectedRows((prev) => {
+      const allSelected = currentRowIds.length > 0 && currentRowIds.every((id) => prev.includes(id));
+      return allSelected ? [] : currentRowIds;
+    });
+  };
+
+  const handleEliminarSeleccionadas = () => {
+    if (selectedRows.length === 0) return;
+    showModal(
+      'confirm',
+      'Eliminar filas seleccionadas',
+      `¿Seguro que deseas eliminar ${selectedRows.length} fila${selectedRows.length > 1 ? 's' : ''}?`,
+      () => {
+        setExcelData((prev) => ({
+          ...prev,
+          [activeSheet]: {
+            ...prev[activeSheet],
+            data: prev[activeSheet].data.filter((row) => !selectedRows.includes(row.id)),
+          },
+        }));
+        setSelectedRows([]);
+      }
+    );
+  };
+
+  // Limpiar selección al cambiar de hoja
+  useEffect(() => {
+    setSelectedRows([]);
+  }, [activeSheet]);
 
   const handleResetear = () => {
     showModal('confirm', 'Cargar nuevo archivo?', 'Se perderán cambios no guardados.', () => {
@@ -429,13 +475,49 @@ const handleGuardarSolicitudHoja = async () => {
 
             <h2 className="text-lg font-semibold text-gray-800">
               {activeSheet} ({excelData[activeSheet].data.length} registros)
+              {selectedRows.length > 0 && (
+                <span className="ml-3 text-sm font-normal text-blue-600">
+                  ({selectedRows.length} seleccionada{selectedRows.length > 1 ? 's' : ''})
+                </span>
+              )}
             </h2>
+
+            {selectedRows.length > 0 && (
+              <div className="mb-4 flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-sm font-medium text-blue-800">
+                  {selectedRows.length} fila{selectedRows.length > 1 ? 's' : ''} seleccionada{selectedRows.length > 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={handleEliminarSeleccionadas}
+                  className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Eliminar seleccionadas
+                </button>
+                <button
+                  onClick={() => setSelectedRows([])}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar selección
+                </button>
+              </div>
+            )}
 
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto max-h-[480px]">
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gradient-to-r from-gray-700 to-gray-600 text-white text-left sticky top-0">
+                      <th className="px-4 py-3 text-sm font-semibold whitespace-nowrap w-12">
+                        <input
+                          type="checkbox"
+                          checked={
+                            excelData[activeSheet]?.data?.length > 0 &&
+                            excelData[activeSheet].data.every((row) => selectedRows.includes(row.id))
+                          }
+                          onChange={handleToggleAll}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </th>
                       <th className="px-4 py-3 text-sm font-semibold whitespace-nowrap">Acciones</th>
                       {excelData[activeSheet].headers.map((header, idx) => (
                         <th key={idx} className="px-4 py-3 text-sm font-semibold whitespace-nowrap">
@@ -446,7 +528,15 @@ const handleGuardarSolicitudHoja = async () => {
                   </thead>
                   <tbody>
                     {excelData[activeSheet].data.map((row) => (
-                      <tr key={row.id} className="border-b hover:bg-gray-50">
+                      <tr key={row.id} className={`border-b hover:bg-gray-50 ${selectedRows.includes(row.id) ? 'bg-blue-50' : ''}`}>
+                        <td className="px-4 py-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedRows.includes(row.id)}
+                            onChange={() => handleToggleRow(row.id)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </td>
                         <td className="px-4 py-2">
                           <button
                             onClick={() => handleEliminarFila(activeSheet, row.id)}
@@ -476,16 +566,21 @@ const handleGuardarSolicitudHoja = async () => {
             </div>
 
             <div className="flex justify-between gap-3">
-              <button onClick={handleResetear} className="px-5 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50">
+              <button onClick={handleResetear} disabled={guardando} className="px-5 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
                 Cargar otro archivo
               </button>
               <div className="flex gap-3">
                 <button
                   onClick={handleGuardarSolicitudHoja}
-                  disabled={savedSheets[activeSheet]?.saved}
-                  className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={savedSheets[activeSheet]?.saved || guardando}
+                  className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[200px]"
                 >
-                  {savedSheets[activeSheet]?.saved ? 'Hoja guardada ✓' : 'Guardar solicitud de esta hoja'}
+                  {guardando ? (
+                    <>
+                      <InlineSpinner size="sm" />
+                      Guardando...
+                    </>
+                  ) : savedSheets[activeSheet]?.saved ? 'Hoja guardada ✓' : 'Guardar solicitud de esta hoja'}
                 </button>
                 <button onClick={handleFinalizar} className="px-5 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-semibold hover:from-green-600 hover:to-green-700">
                   Finalizar

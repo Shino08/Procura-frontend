@@ -21,13 +21,13 @@ export const BaseModal = ({ open, title, description, tone = "default", onClose,
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-3 sm:p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-3 sm:p-4 modal-backdrop"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl modal-content-scale"
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`h-1 w-full bg-gradient-to-r ${toneBar}`} />
@@ -39,7 +39,11 @@ export const BaseModal = ({ open, title, description, tone = "default", onClose,
               {description ? <p className="mt-1 text-xs sm:text-sm text-gray-600">{description}</p> : null}
             </div>
 
-            <button onClick={onClose} className="rounded-lg p-2 hover:bg-gray-100" aria-label="Cerrar">
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Cerrar"
+            >
               <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>

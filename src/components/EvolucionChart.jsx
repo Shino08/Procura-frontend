@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../services";
+import { InlineSpinner } from "./LoadingSpinner";
 
 export const EvolucionChart = ({ token }) => {
   const [data, setData] = useState([]);
@@ -52,7 +53,8 @@ export const EvolucionChart = ({ token }) => {
 
   if (loading) {
     return (
-      <div className="h-72 flex items-center justify-center">
+      <div className="h-72 flex flex-col items-center justify-center gap-3">
+        <InlineSpinner size="md" />
         <p className="text-sm text-gray-500">Cargando gráfico...</p>
       </div>
     );

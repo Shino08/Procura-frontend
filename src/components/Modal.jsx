@@ -1,15 +1,24 @@
+import { useEffect } from "react";
+
 export const Modal = ({ open, title, subtitle, onClose, children, footer }) => {
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => e.key === "Escape" && onClose?.();
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4 modal-backdrop"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl modal-content-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -22,7 +31,7 @@ export const Modal = ({ open, title, subtitle, onClose, children, footer }) => {
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 hover:bg-white/15"
+              className="rounded-lg p-2 hover:bg-white/15 transition-colors duration-200"
               aria-label="Cerrar"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

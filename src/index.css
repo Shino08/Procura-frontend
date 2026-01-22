@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================================
+   ANIMACIONES BASE
+   ================================ */
+
 @keyframes fade-in {
     from {
     opacity: 0;
@@ -22,14 +26,17 @@
     }
 }
 
+/* Fade In */
 .animate-fade-in {
     animation: fade-in 0.2s ease-out;
 }
 
+/* Scale In */
 .animate-scale-in {
     animation: scale-in 0.3s ease-out;
 }
 
+/* Blob Animation */
 @keyframes blob {
     0%, 100% {
     transform: translate(0, 0) scale(1);
@@ -52,3 +59,193 @@
 .animation-delay-2000 {
     animation-delay: 2s;
 }
+
+/* ================================
+   ANIMACIONES PARA MODALES
+   ================================ */
+
+/* Backdrop fade in */
+@keyframes modal-backdrop-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Modal slide and scale in */
+@keyframes modal-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Modal slide from right */
+@keyframes modal-slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Modal slide from left */
+@keyframes modal-slide-in-left {
+    from {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Modal slide up */
+@keyframes modal-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal fade scale in */
+@keyframes modal-fade-scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Modal fade scale out */
+@keyframes modal-fade-scale-out {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+/* ================================
+   CLASES DE ANIMACIÓN PARA MODALES
+   ================================ */
+
+.modal-backdrop {
+    animation: modal-backdrop-in 0.25s ease-out;
+}
+
+.modal-content-in {
+    animation: modal-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-content-scale {
+    animation: modal-fade-scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-content-slide-up {
+    animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Stagger children animations */
+.stagger-in > * {
+    animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.stagger-in > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.25s; }
+
+/* ================================
+   ANIMACIONES ADICIONALES
+   ================================ */
+
+/* Slide in from right */
+@keyframes slide-in-right {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-in-right {
+    animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Slide in from left */
+@keyframes slide-in-left {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-in-left {
+    animation: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Slide up */
+@keyframes slide-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Pulse once */
+@keyframes pulse-once {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.animate-pulse-once {
+    animation: pulse-once 0.5s ease-in-out;
+}
+
+/* Animation delays */
+.animation-delay-100 { animation-delay: 0.1s; }
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-300 { animation-delay: 0.3s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-500 { animation-delay: 0.5s; }

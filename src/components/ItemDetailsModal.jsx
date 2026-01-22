@@ -4,6 +4,7 @@ import { getStatusCfg, getTipoCfg } from "../utils/solicitudesUi";
 import { UploadAdjuntosModal } from "./UploadAdjuntosModal";
 import { ConfirmModal } from "./ConfirmModal";
 import { Modal } from "./Modal";
+import { InlineSpinner } from "./LoadingSpinner";
 import { API_URL } from "../services";
 
 export const ItemDetailsModal = ({
@@ -561,7 +562,10 @@ setObservaciones(ordered2);
       <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
         <p className="text-[10px] font-semibold text-blue-700 mb-1.5">Cambiar estado</p>
         {loadingEstados ? (
-          <p className="text-[10px] text-gray-500">Cargando estados...</p>
+          <div className="flex items-center gap-2">
+            <InlineSpinner size="sm" />
+            <p className="text-[10px] text-gray-500">Cargando estados...</p>
+          </div>
         ) : (
           <select
             value={selectedEstadoId || ""}
@@ -591,7 +595,10 @@ setObservaciones(ordered2);
         {activeTab === "archivos" && (
           <div className="rounded-xl bg-gray-50 p-5 text-sm text-gray-700">
             {loadingAdjuntos ? (
-              <p className="text-xs text-gray-500">Cargando adjuntos...</p>
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <InlineSpinner size="md" />
+                <p className="text-xs text-gray-500">Cargando adjuntos...</p>
+              </div>
             ) : errorAdjuntos ? (
               <p className="text-xs text-red-600">{errorAdjuntos}</p>
             ) : adjuntos.length === 0 ? (
@@ -637,7 +644,10 @@ setObservaciones(ordered2);
             {/* Chat messages */}
             <div className="flex-1 overflow-y-auto rounded-t-xl bg-gray-50 p-4 space-y-3">
               {loadingObservaciones ? (
-                <p className="text-xs text-gray-500 text-center">Cargando observaciones...</p>
+                <div className="flex flex-col items-center justify-center py-8 gap-3">
+                  <InlineSpinner size="md" />
+                  <p className="text-xs text-gray-500 text-center">Cargando observaciones...</p>
+                </div>
               ) : observaciones.length === 0 ? (
                 <p className="text-xs text-gray-500 text-center">No hay observaciones. Inicia la conversación.</p>
               ) : (

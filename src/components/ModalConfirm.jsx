@@ -5,9 +5,15 @@ export const ModalConfirm = ({ open, item, step, onCancel, onConfirm }) => {
   if (!open || !item) return null;
 
   const status = getStatusCfg(item.estado);
+  const isAlreadyApproved = item.estado === "Aprobado";
+  const isProcessing = step === "processing";
+  const isSuccess = step === "success";
 
   const title =
-    step === "confirm" ? "Confirmar aprobación" : step === "processing" ? "Procesando..." : "Aprobación exitosa";
+    isProcessing ? "Procesando..." :
+    isSuccess ? "Aprobación exitosa" :
+    isAlreadyApproved ? "Ítem Ya Aprobado" :
+    "Confirmar aprobación";
 
   return (
     <Modal
@@ -26,23 +32,34 @@ export const ModalConfirm = ({ open, item, step, onCancel, onConfirm }) => {
             </button>
             <button
               onClick={onConfirm}
-              className="flex-1 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
+              disabled={isAlreadyApproved}
+              className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors ${
+                isAlreadyApproved
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
             >
-              Confirmar
+              {isAlreadyApproved ? "Ya Aprobado" : "Confirmar"}
             </button>
           </div>
         ) : (
           <div className="text-center text-sm text-gray-600">
-            {step === "processing" ? "Por favor espere..." : "Listo."}
+            {isProcessing ? "Por favor espere..." : isSuccess ? "¡Listo!" : ""}
           </div>
         )
       }
     >
       {step === "confirm" ? (
         <div className="space-y-3 text-sm">
-          <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
-            Esta acción marcará el renglón como <span className="font-semibold">Aprobado</span>.
-          </div>
+          {isAlreadyApproved ? (
+            <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-green-800">
+              Este renglón ya está marcado como <span className="font-semibold">Aprobado</span>. No se requiere acción adicional.
+            </div>
+          ) : (
+            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
+              Esta acción marcará el renglón como <span className="font-semibold">Aprobado</span>.
+            </div>
+          )}
 
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
@@ -63,15 +80,15 @@ export const ModalConfirm = ({ open, item, step, onCancel, onConfirm }) => {
             </div>
           </div>
         </div>
-      ) : step === "processing" ? (
+      ) : isProcessing ? (
         <div className="grid place-items-center py-10">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-green-600" />
         </div>
-      ) : (
+      ) : isSuccess ? (
         <div className="grid place-items-center py-10 text-sm text-gray-700">
           El renglón fue marcado como aprobado.
         </div>
-      )}
+      ) : null}
     </Modal>
   );
 };

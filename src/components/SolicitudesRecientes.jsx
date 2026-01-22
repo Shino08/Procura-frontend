@@ -1,6 +1,7 @@
 // src/components/dashboard/SolicitudesRecientes.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { InlineSpinner } from "./LoadingSpinner";
 
 const formatFecha = (iso) =>
   new Date(iso).toLocaleDateString("es-ES", {
@@ -85,7 +86,12 @@ export const SolicitudesRecientes = ({
       </div>
 
       {/* Estados */}
-      {loading && <div className="p-4 text-sm text-gray-600">Cargando solicitudes…</div>}
+      {loading && (
+        <div className="p-8 flex flex-col items-center justify-center gap-3">
+          <InlineSpinner size="md" />
+          <p className="text-sm text-gray-600">Cargando solicitudes…</p>
+        </div>
+      )}
       {!loading && error && <div className="p-4 text-sm text-red-600">{error}</div>}
       {!loading && !error && top.length === 0 && (
         <div className="p-4 text-sm text-gray-600">No hay solicitudes recientes.</div>
