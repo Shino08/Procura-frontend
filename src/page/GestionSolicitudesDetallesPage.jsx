@@ -6,6 +6,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { ResultModal } from "../components/ResultModal";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 import { API_URL } from "../services";
 import { formatFecha } from "../utils/solicitudesUi";
 
@@ -293,7 +294,7 @@ export const GestionSolicitudesDetallesPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-100">
-        <p className="text-sm text-gray-600">Cargando detalles...</p>
+        <LoadingSpinner size="lg" text="Cargando detalles..." />
       </div>
     );
   }

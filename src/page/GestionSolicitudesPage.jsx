@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { API_URL } from "../services";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { CardSpinner, LoadingSpinner } from "../components/LoadingSpinner";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -150,7 +151,7 @@ const download = async (archivoId) => {
   if (loading) {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-50">
-        <p className="text-sm text-gray-600">Cargando solicitudes...</p>
+        <LoadingSpinner size="lg" text="Cargando solicitudes..." />
       </div>
     );
   }

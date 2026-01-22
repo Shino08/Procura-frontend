@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { API_URL } from "../services";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { CardSpinner } from "../components/LoadingSpinner";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -149,8 +150,8 @@ export const SolicitudesPage = () => {
 
         {/* Estados */}
         {loading && (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">
-            Cargando solicitudes...
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <CardSpinner text="Cargando solicitudes..." />
           </div>
         )}
 

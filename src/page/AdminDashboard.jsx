@@ -7,6 +7,7 @@ import { SolicitudesRecientes } from "../components/SolicitudesRecientes";
 import { EvolucionChart } from "../components/EvolucionChart";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { CardSpinner } from "../components/LoadingSpinner";
 import { API_URL } from "../services";
 
 export const AdminDashboard = ({ token, userName }) => {

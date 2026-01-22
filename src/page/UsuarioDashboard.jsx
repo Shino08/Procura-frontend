@@ -6,6 +6,7 @@ import { useNotificaciones } from "../hooks/useNotifications";
 import { SolicitudesRecientes } from "../components/SolicitudesRecientes";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { CardSpinner } from "../components/LoadingSpinner";
 import { API_URL } from "../services";
 
 export const UsuarioDashboard = ({ token, userName }) => {
