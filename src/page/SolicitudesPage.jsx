@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_URL } from "../services";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { Breadcrumb } from "../components/Breadcrumb";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -14,6 +16,12 @@ const formatFecha = (fecha) =>
 
 export const SolicitudesPage = () => {
   const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const storedUserName = localStorage.getItem("userCorreo") || "Usuario";
+    setUserName(storedUserName);
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,42 +95,40 @@ export const SolicitudesPage = () => {
     setCurrentPage(1);
   };
 
+  // Custom action for the header
+  const cargarSolicitudAction = (
+    <Link
+      to="/solicitudes/nueva"
+      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition hover:from-orange-600 hover:to-orange-700 sm:px-4"
+    >
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      </svg>
+      <span className="hidden sm:inline">Cargar Solicitud</span>
+      <span className="sm:hidden">Cargar</span>
+    </Link>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur shadow-sm">
-        <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8">
-          <div className="flex h-14 items-center justify-between sm:h-16">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
-                aria-label="Volver al dashboard"
-              >
-                <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
+      {/* Header compartido */}
+      <DashboardHeader
+        userName={userName}
+        roleLabel="Usuario"
+        showBackButton={true}
+        backTo="/dashboard"
+        title="Mis Solicitudes"
+        subtitle="Historial de archivos cargados"
+        actions={cargarSolicitudAction}
+      />
 
-              <div>
-                <h1 className="text-base font-bold text-gray-800 sm:text-lg lg:text-xl">Mis Solicitudes</h1>
-                <p className="hidden text-xs text-gray-500 sm:block">Historial de archivos cargados</p>
-              </div>
-            </div>
-
-            <Link
-              to="/solicitudes/nueva"
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition hover:from-orange-600 hover:to-orange-700 sm:px-4"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <span className="hidden sm:inline">Cargar Solicitud</span>
-              <span className="sm:hidden">Cargar</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "Home", to: "/dashboard" },
+          { label: "Mis Solicitudes", active: true }
+        ]}
+      />
 
       <main className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Search */}

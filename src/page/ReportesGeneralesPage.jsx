@@ -1,8 +1,17 @@
 // src/page/ReportesGeneralesPage.jsx
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { DashboardHeader } from '../components/DashboardHeader';
+import { Breadcrumb } from '../components/Breadcrumb';
 
 export const ReportesGeneralesPage = () => {
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const storedUserName = localStorage.getItem("userCorreo") || "Usuario";
+    setUserName(storedUserName);
+  }, []);
+
   const [periodoFiltro, setPeriodoFiltro] = useState('mes');
   const [tipoReporte, setTipoReporte] = useState('todos');
 
@@ -194,32 +203,23 @@ export const ReportesGeneralesPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center gap-3">
-              <Link
-                to="/dashboard"
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Volver al Dashboard"
-              >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </Link>
-              <div>
-                <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
-                  Reportes Generales
-                </h1>
-                <p className="text-xs text-gray-500 hidden md:block">
-                  Análisis y métricas del sistema
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Header compartido */}
+      <DashboardHeader
+        userName={userName}
+        roleLabel="Administrador"
+        showBackButton={true}
+        backTo="/dashboard"
+        title="Reportes Generales"
+        subtitle="Análisis y métricas del sistema"
+      />
+
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "Home", to: "/dashboard" },
+          { label: "Reportes Generales", active: true }
+        ]}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">

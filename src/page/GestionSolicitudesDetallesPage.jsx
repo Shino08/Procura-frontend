@@ -4,6 +4,8 @@ import { ModalConfirm } from "../components/ModalConfirm";
 import { ItemDetailsModal } from "../components/ItemDetailsModal";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { ResultModal } from "../components/ResultModal";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { Breadcrumb } from "../components/Breadcrumb";
 import { API_URL } from "../services";
 import { formatFecha } from "../utils/solicitudesUi";
 
@@ -58,8 +60,15 @@ export const GestionSolicitudesDetallesPage = () => {
   const [approveStep, setApproveStep] = useState("confirm");
   const [estados, setEstados] = useState([]);
   const [statusFilter, setStatusFilter] = useState("todos");
+  const [userName, setUserName] = useState("");
 
   const originalRef = useRef(null);
+
+  // Obtener userName del localStorage
+  useEffect(() => {
+    const storedUserName = localStorage.getItem("userCorreo") || "Usuario";
+    setUserName(storedUserName);
+  }, []);
 
   // Fetch estados
   useEffect(() => {
@@ -318,56 +327,22 @@ export const GestionSolicitudesDetallesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-orange-500 rounded flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-                </svg>
-              </div>
-              <div>
-                <div className="text-sm font-bold text-gray-800">Sistema Procura</div>
-                <div className="text-xs text-gray-600">B&D - Admin</div>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              localStorage.removeItem("userCorreo");
-              localStorage.removeItem("userRol");
-              navigate("/login");
-            }}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded text-sm flex items-center space-x-2"
-          >
-            <span>Cerrar sesión</span>
-          </button>
-        </div>
-      </header>
+      {/* Header compartido */}
+      <DashboardHeader
+        userName={userName}
+        roleLabel="Administrador"
+        showBackButton={true}
+        backTo="/solicitudes/admin"
+      />
 
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-sm">
-              <span className="text-orange-500">🏠</span>
-              <span className="text-gray-400">/</span>
-              <Link to="/solicitudes/admin" className="text-gray-600 hover:text-gray-900">Solicitudes</Link>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-900 font-medium">Detalle #{file?.id ?? id}</span>
-            </div>
-            {hayCambios && (
-              <span className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 border border-orange-200">
-                <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-                Cambios sin guardar
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Home", to: "/dashboard" },
+          { label: "Solicitudes", to: "/solicitudes/admin" },
+          { label: `Detalle #${file?.id ?? id}`, active: true }
+        ]}
+      />
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-6">

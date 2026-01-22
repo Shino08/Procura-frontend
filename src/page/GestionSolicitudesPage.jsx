@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../services";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { Breadcrumb } from "../components/Breadcrumb";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -14,6 +16,12 @@ const formatFecha = (iso) =>
 
 export const GestionSolicitudesPage = () => {
   const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const storedUserName = localStorage.getItem("userCorreo") || "Usuario";
+    setUserName(storedUserName);
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -166,31 +174,23 @@ const download = async (archivoId) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur shadow-sm">
-        <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8">
-          <div className="flex h-14 items-center justify-between sm:h-16">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
-                aria-label="Volver al dashboard"
-              >
-                <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
+      {/* Header compartido */}
+      <DashboardHeader
+        userName={userName}
+        roleLabel="Administrador"
+        showBackButton={true}
+        backTo="/dashboard"
+        title="Gestión de Solicitudes"
+        subtitle="Administrar solicitudes (archivos) subidos por Procura"
+      />
 
-              <div>
-                <h1 className="text-base font-bold text-gray-800 sm:text-lg lg:text-xl">Gestión de Solicitudes</h1>
-                <p className="hidden text-xs text-gray-500 md:block">
-                  Administrar solicitudes (archivos) subidos por Procura
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "Home", to: "/dashboard" },
+          { label: "Gestión de Solicitudes", active: true }
+        ]}
+      />
 
       <main className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Filtro */}

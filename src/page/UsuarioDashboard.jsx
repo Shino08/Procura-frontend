@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { NotificacionesPanel } from "../components/NotificacionesPanel";
 import { useNotificaciones } from "../hooks/useNotifications";
 import { SolicitudesRecientes } from "../components/SolicitudesRecientes";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { Breadcrumb } from "../components/Breadcrumb";
 import { API_URL } from "../services";
 
 export const UsuarioDashboard = ({ token, userName }) => {
@@ -111,57 +113,21 @@ export const UsuarioDashboard = ({ token, userName }) => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-orange-500 rounded flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-                </svg>
-              </div>
-              <div>
-                <div className="text-sm font-bold text-gray-800">Sistema Procura</div>
-                <div className="text-xs text-gray-600">B&D</div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setNotificacionesOpen(true)}
-              className="relative text-gray-500 hover:text-gray-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-              </svg>
-              {notificacionesNoLeidas > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {notificacionesNoLeidas > 9 ? "9+" : notificacionesNoLeidas}
-                </span>
-              )}
-            </button>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold">
-              {userName.substring(0, 2).toUpperCase()}
-            </div>
-            <button
-              onClick={logout}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded text-sm flex items-center space-x-2"
-            >
-              <span>Cerrar sesión</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Header compartido */}
+      <DashboardHeader
+        userName={userName}
+        roleLabel="Usuario"
+        notificacionesNoLeidas={notificacionesNoLeidas}
+        onOpenNotificaciones={() => setNotificacionesOpen(true)}
+      />
 
       {/* Breadcrumb */}
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center space-x-2 text-sm">
-          <span className="text-orange-500">🏠</span>
-          <span className="text-gray-400">/</span>
-          <span className="text-gray-700">Mi Panel</span>
-        </div>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Home", to: "/dashboard" },
+          { label: "Mi Panel", active: true }
+        ]}
+      />
 
       {/* Main Content */}
       <main className="container mx-auto px-6 pb-12">
@@ -249,7 +215,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-12">
         <div className="container mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-4 text-sm text-gray-600">
             <p>© 2026 Sistema Procura - Business & Development. Todos los derechos reservados.</p>
           </div>
         </div>

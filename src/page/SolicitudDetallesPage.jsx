@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ModalConfirm } from "../components/ModalConfirm";
 import { ItemDetailsModal } from "../components/ItemDetailsModal";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { Breadcrumb } from "../components/Breadcrumb";
 import { API_URL } from "../services";
 import { ITEMS_PER_PAGE, formatArchivoId, formatFecha } from "../utils/solicitudesUi";
 
@@ -65,6 +67,8 @@ export const SolicitudDetallesPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   // Modales de detalle / aprobación
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -73,6 +77,13 @@ export const SolicitudDetallesPage = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [approveStep, setApproveStep] = useState("confirm");
   const [estados, setEstados] = useState([]);
+  const [userName, setUserName] = useState("");
+
+  // Obtener userName del localStorage
+  useEffect(() => {
+    const storedUserName = localStorage.getItem("userCorreo") || "Usuario";
+    setUserName(storedUserName);
+  }, []);
 
   // Fetch estados
   useEffect(() => {
@@ -131,6 +142,105 @@ export const SolicitudDetallesPage = () => {
     fetchDetails();
     return () => controller.abort();
   }, [fileId]);
+
+  // FUNCIÓN DE DESCARGA DEL ARCHIVO ORIGINAL
+  // const handleDownload = async () => {
+  //   if (!header?.archivoId) return;
+
+  //   setDownloading(true);
+  //   try {
+  //     const token = localStorage.getItem("token");
+      
+  //     const response = await fetch(`${API_URL}/archivos/${header.archivoId}/descargar`, {
+  //       method: "GET",
+  //       headers: {
+  //         Authorization: token ? `Bearer ${token}` : "",
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorData = await response.json().catch(() => ({}));
+  //       throw new Error(errorData.message || "Error al descargar el archivo");
+  //     }
+
+  //     const blob = await response.blob();
+  //     const url = window.URL.createObjectURL(blob);
+
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = header.nombreArchivo || `solicitud-${header.id}.pdf`;
+      
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+
+  //     window.URL.revokeObjectURL(url);
+  //   } catch (error) {
+  //     console.error("Error descargando archivo:", error);
+  //     alert(`Error al descargar: ${error.message}`);
+  //   } finally {
+  //     setDownloading(false);
+  //   }
+  // };
+
+  // FUNCIÓN PARA GENERAR PDF DE ITEMS APROBADOS
+  const handleGeneratePdf = async () => {
+    if (!solicitudActivaId) {
+      alert("No hay solicitud activa seleccionada");
+      return;
+    }
+
+    setGeneratingPdf(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_URL}/generar-pdf/${solicitudActivaId}`, {
+        method: "GET",
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error al generar el PDF");
+      }
+
+      // Obtener el blob del PDF
+      const blob = await response.blob();
+
+      // Crear URL temporal
+      const url = window.URL.createObjectURL(blob);
+
+      // Crear enlace de descarga
+      const link = document.createElement("a");
+      link.href = url;
+      
+      // Obtener nombre del archivo desde el header Content-Disposition o usar uno por defecto
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = `reporte-solicitud-${solicitudActivaId}.pdf`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.download = filename;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      alert(`Error al generar PDF: ${error.message}`);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   const solicitudActiva = useMemo(() => {
     return solicitudes.find((s) => String(s.id) === String(solicitudActivaId)) || solicitudes[0] || null;
@@ -238,7 +348,10 @@ export const SolicitudDetallesPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-100">
-        <p className="text-sm text-gray-600">Cargando detalles...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600">Cargando detalles...</p>
+        </div>
       </div>
     );
   }
@@ -281,50 +394,22 @@ export const SolicitudDetallesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-orange-500 rounded flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-                </svg>
-              </div>
-              <div>
-                <div className="text-sm font-bold text-gray-800">Sistema Procura</div>
-                <div className="text-xs text-gray-600">B&D</div>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              localStorage.removeItem("userCorreo");
-              localStorage.removeItem("userRol");
-              navigate("/login");
-            }}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded text-sm flex items-center space-x-2"
-          >
-            <span>Cerrar sesión</span>
-          </button>
-        </div>
-      </header>
+      {/* Header compartido */}
+      <DashboardHeader
+        userName={userName}
+        roleLabel="Usuario"
+        showBackButton={true}
+        backTo="/solicitudes/usuario"
+      />
 
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-sm">
-              <span className="text-orange-500">🏠</span>
-              <span className="text-gray-400">/</span>
-              <Link to="/solicitudes/usuario" className="text-gray-600 hover:text-gray-900">Mis Solicitudes</Link>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-900 font-medium">Detalle {header.id}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Home", to: "/dashboard" },
+          { label: "Mis Solicitudes", to: "/solicitudes/usuario" },
+          { label: `Detalle ${header.id}`, active: true }
+        ]}
+      />
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-6">
@@ -374,7 +459,7 @@ export const SolicitudDetallesPage = () => {
             </div>
           </div>
 
-          {/* Solicitud Selector */}
+          {/* Solicitud Selector + Botones de Descarga */}
           {solicitudes.length > 0 && (
             <div className="bg-white rounded-lg shadow-sm p-5">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -395,21 +480,70 @@ export const SolicitudDetallesPage = () => {
                 ))}
               </select>
 
-              {header?.archivoId && (
-                <div className="mt-3">
-                  <a
-                    href={`${API_URL}/archivos/${header.archivoId}/descargar`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
+              {/* Botones de descarga */}
+              <div className="mt-4 space-y-2">
+
+                {/* BOTÓN GENERAR PDF DE ITEMS APROBADOS */}
+                {solicitudActivaId && stats.aprobados > 0 && (
+                  <button
+                    onClick={handleGeneratePdf}
+                    disabled={generatingPdf}
+                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                      generatingPdf
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-orange-500 hover:bg-orange-600 text-white shadow-sm hover:shadow-md"
+                    }`}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    Descargar PDF
-                  </a>
-                </div>
-              )}
+                    {generatingPdf ? (
+                      <>
+                        <svg
+                          className="w-4 h-4 animate-spin"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Generando PDF...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        Generar PDF Aprobados ({stats.aprobados})
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {solicitudActivaId && stats.aprobados === 0 && (
+                  <div className="w-full px-4 py-2.5 rounded-lg text-sm text-gray-500 bg-gray-50 border border-gray-200 text-center">
+                    No hay ítems aprobados para generar PDF
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

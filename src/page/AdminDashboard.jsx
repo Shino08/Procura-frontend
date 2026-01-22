@@ -5,6 +5,8 @@ import { NotificacionesPanel } from "../components/NotificacionesPanel";
 import { useNotificaciones } from "../hooks/useNotifications";
 import { SolicitudesRecientes } from "../components/SolicitudesRecientes";
 import { EvolucionChart } from "../components/EvolucionChart";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { Breadcrumb } from "../components/Breadcrumb";
 import { API_URL } from "../services";
 
 export const AdminDashboard = ({ token, userName }) => {
@@ -121,62 +123,16 @@ export const AdminDashboard = ({ token, userName }) => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-orange-500 rounded flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-                </svg>
-              </div>
-              <div>
-                <div className="text-sm font-bold text-gray-800">Sistema Procura</div>
-                <div className="text-xs text-gray-600">B&D - Admin</div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setNotificacionesOpen(true)}
-              className="relative text-gray-500 hover:text-gray-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-              </svg>
-              {notificacionesNoLeidas > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {notificacionesNoLeidas > 9 ? "9+" : notificacionesNoLeidas}
-                </span>
-              )}
-            </button>
-            <button className="text-gray-500 hover:text-gray-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-            </button>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold">
-              {userName.substring(0, 2).toUpperCase()}
-            </div>
-            <button
-              onClick={logout}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded text-sm flex items-center space-x-2"
-            >
-              <span>Cerrar sesión</span>
-            </button>
-          </div>
-        </div>
-      </header>
+
+      <DashboardHeader userName={userName} />
 
       {/* Breadcrumb */}
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center space-x-2 text-sm">
-          <span className="text-orange-500">Home</span>
-          <span className="text-gray-400">/</span>
-          <span className="text-gray-700">Panel de Administración</span>
-        </div>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Home", to: "/dashboard" },
+          { label: "Panel de Administración", active: true }
+        ]}
+      />
 
       {/* Main Content */}
       <main className="container mx-auto px-6 pb-12">

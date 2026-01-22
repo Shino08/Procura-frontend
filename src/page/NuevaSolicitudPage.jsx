@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { API_URL } from '../services';
+import { DashboardHeader } from '../components/DashboardHeader';
+import { Breadcrumb } from '../components/Breadcrumb';
 
 export const NuevaSolicitudPage = () => {
   const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const storedUserName = localStorage.getItem("userCorreo") || "Usuario";
+    setUserName(storedUserName);
+  }, []);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [file, setFile] = useState(null);
@@ -313,18 +321,22 @@ const handleGuardarSolicitudHoja = async () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-gray-100 rounded-lg">
-              <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-lg font-bold text-gray-800">Nueva Solicitud</h1>
-          </div>
-        </div>
-      </header>
+      {/* Header compartido */}
+      <DashboardHeader
+        userName={userName}
+        roleLabel="Usuario"
+        showBackButton={true}
+        backTo="/dashboard"
+        title="Nueva Solicitud"
+      />
+
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "Home", to: "/dashboard" },
+          { label: "Nueva Solicitud", active: true }
+        ]}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {currentStep === 1 && (
