@@ -62,7 +62,7 @@ export const ItemDetailsModal = ({
       const rol = payload.rol || payload.role || payload.nombreRol;
       const userId = payload.id || payload.userId || payload.sub;
       const userName = payload.nombre || payload.name || payload.username;
-      
+
       setUserRole(rol);
       setCurrentUserId(userId);
       setCurrentUserName(userName);
@@ -74,6 +74,10 @@ export const ItemDetailsModal = ({
   const roleNormalized = (userRole || "").trim().toLowerCase();
   const isAdmin = roleNormalized === "administrador";
   const isUser = roleNormalized === "procura" || roleNormalized === "usuario";
+
+  // Detectar si el ítem ya está aprobado
+  const itemEstadoNombre = item?.estado?.nombre || item?.estado || "";
+  const isApproved = itemEstadoNombre.toLowerCase() === "aprobado";
 
   // Scroll automático al final del chat
   useEffect(() => {
@@ -155,47 +159,47 @@ export const ItemDetailsModal = ({
     return () => controller.abort();
   }, [open, item?.id, activeTab]);
 
-// Cargar observaciones (chat)
-useEffect(() => {
-  if (!open || !item?.id || activeTab !== "observaciones") {
-    setObservaciones([]);
-    return;
-  }
-
-  const controller = new AbortController();
-
-  (async () => {
-    try {
-      setLoadingObservaciones(true);
-
-      const token = localStorage.getItem("token");
-
-      // ✅ TU ENDPOINT REAL: GET /observaciones/:itemId
-      const res = await fetch(`${API_URL}/observaciones/${item.id}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-        signal: controller.signal,
-      });
-
-      if (!res.ok) throw new Error("Error cargando observaciones");
-
-      const data = await res.json().catch(() => ({}));
-      const lista = Array.isArray(data?.observaciones) ? data.observaciones : [];
-
-      // ✅ Asegura orden viejo -> nuevo (sin depender del orderBy del backend)
-      const ordered = [...lista].sort(
-        (a, b) => new Date(a.fechaCreacion).getTime() - new Date(b.fechaCreacion).getTime()
-      );
-
-      setObservaciones(ordered);
-    } catch (e) {
-      if (e.name !== "AbortError") console.error(e);
-    } finally {
-      setLoadingObservaciones(false);
+  // Cargar observaciones (chat)
+  useEffect(() => {
+    if (!open || !item?.id || activeTab !== "observaciones") {
+      setObservaciones([]);
+      return;
     }
-  })();
 
-  return () => controller.abort();
-}, [open, item?.id, activeTab]);
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        setLoadingObservaciones(true);
+
+        const token = localStorage.getItem("token");
+
+        // ✅ TU ENDPOINT REAL: GET /observaciones/:itemId
+        const res = await fetch(`${API_URL}/observaciones/${item.id}`, {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          signal: controller.signal,
+        });
+
+        if (!res.ok) throw new Error("Error cargando observaciones");
+
+        const data = await res.json().catch(() => ({}));
+        const lista = Array.isArray(data?.observaciones) ? data.observaciones : [];
+
+        // ✅ Asegura orden viejo -> nuevo (sin depender del orderBy del backend)
+        const ordered = [...lista].sort(
+          (a, b) => new Date(a.fechaCreacion).getTime() - new Date(b.fechaCreacion).getTime()
+        );
+
+        setObservaciones(ordered);
+      } catch (e) {
+        if (e.name !== "AbortError") console.error(e);
+      } finally {
+        setLoadingObservaciones(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [open, item?.id, activeTab]);
 
   if (!open || !item) return null;
 
@@ -239,61 +243,61 @@ useEffect(() => {
     }
   };
   // Enviar observación (ambos roles)
-const handleSendObservacion = async (e) => {
-  e?.preventDefault();
+  const handleSendObservacion = async (e) => {
+    e?.preventDefault();
 
-  const texto = nuevaObservacion.trim();
-  if (!texto || !item?.id) return;
+    const texto = nuevaObservacion.trim();
+    if (!texto || !item?.id) return;
 
-  setSendingObservacion(true);
-  setErrorSave("");
+    setSendingObservacion(true);
+    setErrorSave("");
 
-  try {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
 
-    const res = await fetch(`${API_URL}/observaciones/${item.id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
-      },
-      body: JSON.stringify({ observacion: texto }),
-    });
+      const res = await fetch(`${API_URL}/observaciones/${item.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ observacion: texto }),
+      });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || err.message || "Error al enviar observación");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Error al enviar observación");
+      }
+
+      // Caso A: el backend devuelve la observación creada (recomendado)
+      const maybeObs = await res.json().catch(() => null);
+
+      if (maybeObs && maybeObs.id) {
+        setObservaciones((prev) => [...prev, maybeObs]);
+      } else {
+        // Caso B: el backend devuelve solo {ok:true} o similar -> recargar lista
+        const res2 = await fetch(`${API_URL}/observaciones/${item.id}`, {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+        });
+
+        const data2 = await res2.json().catch(() => ({}));
+        const lista2 = Array.isArray(data2?.observaciones) ? data2.observaciones : [];
+
+        const ordered2 = [...lista2].sort(
+          (a, b) => new Date(a.fechaCreacion).getTime() - new Date(b.fechaCreacion).getTime()
+        );
+
+        setObservaciones(ordered2);
+
+      }
+
+      setNuevaObservacion("");
+    } catch (err) {
+      setErrorSave(err.message || "Error inesperado");
+    } finally {
+      setSendingObservacion(false);
     }
-
-    // Caso A: el backend devuelve la observación creada (recomendado)
-    const maybeObs = await res.json().catch(() => null);
-
-    if (maybeObs && maybeObs.id) {
-      setObservaciones((prev) => [...prev, maybeObs]);
-    } else {
-      // Caso B: el backend devuelve solo {ok:true} o similar -> recargar lista
-const res2 = await fetch(`${API_URL}/observaciones/${item.id}`, {
-  headers: { Authorization: token ? `Bearer ${token}` : "" },
-});
-
-const data2 = await res2.json().catch(() => ({}));
-const lista2 = Array.isArray(data2?.observaciones) ? data2.observaciones : [];
-
-const ordered2 = [...lista2].sort(
-  (a, b) => new Date(a.fechaCreacion).getTime() - new Date(b.fechaCreacion).getTime()
-);
-
-setObservaciones(ordered2);
-
-    }
-
-    setNuevaObservacion("");
-  } catch (err) {
-    setErrorSave(err.message || "Error inesperado");
-  } finally {
-    setSendingObservacion(false);
-  }
-};
+  };
 
   const handleAprobarCotizacion = async () => {
     if (!isUser) return;
@@ -317,10 +321,14 @@ setObservaciones(ordered2);
         throw new Error(err.error || err.message || "Error al aprobar cotización");
       }
 
-      window.location.reload();
-
+      // Actualizar el estado local del item para reflejar el cambio inmediatamente
+      // Llamar al callback para que el componente padre actualice sus datos
       onItemUpdated?.();
-      onClose();
+
+      // Cerrar el modal después de una pequeña pausa para que el usuario vea el éxito
+      setTimeout(() => {
+        onClose();
+      }, 300);
     } catch (e) {
       setErrorSave(e.message || "Error inesperado");
     } finally {
@@ -353,7 +361,7 @@ setObservaciones(ordered2);
       }
 
       setUploadOpen(false);
-      
+
       // Recargar adjuntos
       if (activeTab === "archivos") {
         const token2 = localStorage.getItem("token");
@@ -440,157 +448,278 @@ setObservaciones(ordered2);
         subtitle={item.codigo}
         onClose={onClose}
         footer={
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2">
-            {isAdmin && (
-              <button
-                onClick={() => setUploadOpen(true)}
-                className="flex-1 rounded-xl bg-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-300"
-              >
-                Adjuntar archivos
-              </button>
+          <div className="flex flex-col gap-3">
+            {/* Indicador de estado aprobado */}
+            {isUser && isApproved && (
+              <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
+                <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-semibold text-green-700">Este renglón ya ha sido aprobado</span>
+              </div>
             )}
 
-            {isUser && (
+            {/* Botones de acción */}
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:justify-end sm:gap-3">
+              {/* Botón cerrar - siempre primero */}
               <button
-                onClick={handleAprobarCotizacion}
-                disabled={approvingQuote}
-                className="flex-1 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-blue-600 hover:to-blue-700 disabled:opacity-50"
+                onClick={onClose}
+                className="order-last sm:order-first rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
               >
-                {approvingQuote ? "Aprobando..." : "Aprobar cotización"}
+                Cerrar
               </button>
-            )}
 
-            {isAdmin && (
-              <button
-                onClick={() => setConfirmSaveOpen(true)}
-                disabled={saving}
-                className="flex-1 rounded-xl bg-gradient-to-r from-green-500 to-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-green-600 hover:to-green-700 disabled:opacity-50"
-              >
-                {saving ? "Guardando..." : "Guardar cambios"}
-              </button>
-            )}
+              {/* Botón adjuntar archivos (admin) */}
+              {isAdmin && (
+                <button
+                  onClick={() => setUploadOpen(true)}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  Adjuntar
+                </button>
+              )}
 
-            <button
-              onClick={onClose}
-              className="flex-1 rounded-xl bg-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-300"
-            >
-              Cerrar
-            </button>
+              {/* Botón aprobar cotización (usuario) - deshabilitado si ya aprobado */}
+              {isUser && (
+                <button
+                  onClick={handleAprobarCotizacion}
+                  disabled={approvingQuote || isApproved}
+                  className={`flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${isApproved
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-sm hover:shadow-md disabled:opacity-50"
+                    }`}
+                >
+                  {isApproved ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Ya aprobado
+                    </>
+                  ) : approvingQuote ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Aprobando...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Aprobar cotización
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Botón guardar cambios (admin) */}
+              {isAdmin && (
+                <button
+                  onClick={() => setConfirmSaveOpen(true)}
+                  disabled={saving}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-green-600 hover:to-green-700 disabled:opacity-50 shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  {saving ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Guardar cambios
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         }
       >
-        {/* Tabs */}
-        <div className="mb-4 flex gap-2 overflow-x-auto">
+        {/* Tabs con iconos y diseño mejorado */}
+        <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setActiveTab("general")}
-            className={`rounded-lg px-3 py-2 text-sm font-semibold border whitespace-nowrap ${
-              activeTab === "general"
-                ? "border-orange-300 bg-orange-50 text-orange-700"
-                : "border-gray-200 bg-white text-gray-700"
-            }`}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border transition-all duration-200 whitespace-nowrap ${activeTab === "general"
+              ? "border-orange-300 bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 shadow-sm"
+              : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+              }`}
           >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
             General
           </button>
           <button
             onClick={() => setActiveTab("archivos")}
-            className={`rounded-lg px-3 py-2 text-sm font-semibold border whitespace-nowrap ${
-              activeTab === "archivos"
-                ? "border-orange-300 bg-orange-50 text-orange-700"
-                : "border-gray-200 bg-white text-gray-700"
-            }`}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border transition-all duration-200 whitespace-nowrap ${activeTab === "archivos"
+              ? "border-orange-300 bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 shadow-sm"
+              : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+              }`}
           >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
             Archivos
           </button>
           <button
             onClick={() => setActiveTab("observaciones")}
-            className={`rounded-lg px-3 py-2 text-sm font-semibold border whitespace-nowrap ${
-              activeTab === "observaciones"
-                ? "border-orange-300 bg-orange-50 text-orange-700"
-                : "border-gray-200 bg-white text-gray-700"
-            }`}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border transition-all duration-200 whitespace-nowrap ${activeTab === "observaciones"
+              ? "border-orange-300 bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 shadow-sm"
+              : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+              }`}
           >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
             Observaciones
           </button>
         </div>
 
-{activeTab === "general" && (
-  <div className="space-y-3">
-    {/* Header compacto con info clave */}
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-      <div className="rounded-lg bg-gray-50 p-2.5">
-        <p className="text-[10px] text-gray-500 mb-0.5">Línea</p>
-        <p className="text-sm font-bold text-gray-800">{item.linea}</p>
-      </div>
-      <div className="rounded-lg bg-gray-50 p-2.5">
-        <p className="text-[10px] text-gray-500 mb-0.5">Código</p>
-        <p className="text-xs font-semibold text-gray-800 font-mono truncate">{item.codigo}</p>
-      </div>
-      <div className="rounded-lg bg-gray-50 p-2.5">
-        <p className="text-[10px] text-gray-500 mb-0.5">Tipo</p>
-        <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-semibold ${tipo.bg} ${tipo.text}`}>
-          {item.tipo || "-"}
-        </span>
-      </div>
-      <div className="rounded-lg bg-gray-50 p-2.5">
-        <p className="text-[10px] text-gray-500 mb-0.5">Cantidad</p>
-        <p className="text-sm font-bold text-gray-800">{item.cantidadTotal}</p>
-      </div>
-    </div>
+        {activeTab === "general" && (
+          <div className="space-y-4">
+            {/* Header compacto con info clave - diseño simétrico con iconos */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 p-3.5 border border-gray-100 transition-all duration-200 hover:shadow-sm hover:border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 rounded-lg bg-blue-100">
+                    <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    </svg>
+                  </div>
+                  <p className="text-[11px] font-medium text-gray-500">Línea</p>
+                </div>
+                <p className="text-xl font-bold text-gray-800">{item.linea}</p>
+              </div>
 
-    {/* Estado y Descripción en grid */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      {/* Estado */}
-      <div className="rounded-lg bg-gray-50 p-3">
-        <p className="text-[10px] font-semibold text-gray-600 mb-1.5">Estado actual</p>
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${status.bg} ${status.text}`}
-        >
-          <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
-          {item.estado?.nombre || item.estado}
-        </span>
-      </div>
+              <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 p-3.5 border border-gray-100 transition-all duration-200 hover:shadow-sm hover:border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 rounded-lg bg-purple-100">
+                    <svg className="w-3.5 h-3.5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                  </div>
+                  <p className="text-[11px] font-medium text-gray-500">Código</p>
+                </div>
+                <p className="text-sm font-semibold text-gray-800 font-mono truncate">{item.codigo}</p>
+              </div>
 
-      {/* Descripción */}
-      <div className="rounded-lg bg-gray-50 p-3">
-        <p className="text-[10px] font-semibold text-gray-600 mb-1.5">Descripción</p>
-        <p className="text-xs text-gray-700 line-clamp-2">{item.descripcion}</p>
-      </div>
-    </div>
+              <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 p-3.5 border border-gray-100 transition-all duration-200 hover:shadow-sm hover:border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 rounded-lg bg-orange-100">
+                    <svg className="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                  </div>
+                  <p className="text-[11px] font-medium text-gray-500">Tipo</p>
+                </div>
+                <span className={`inline-block rounded-lg px-2.5 py-1 text-xs font-semibold ${tipo.bg} ${tipo.text}`}>
+                  {item.tipo || "-"}
+                </span>
+              </div>
 
-    {/* Cambiar estado (solo admin) */}
-    {isAdmin && (
-      <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
-        <p className="text-[10px] font-semibold text-blue-700 mb-1.5">Cambiar estado</p>
-        {loadingEstados ? (
-          <div className="flex items-center gap-2">
-            <InlineSpinner size="sm" />
-            <p className="text-[10px] text-gray-500">Cargando estados...</p>
+              <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 p-3.5 border border-gray-100 transition-all duration-200 hover:shadow-sm hover:border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 rounded-lg bg-green-100">
+                    <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                    </svg>
+                  </div>
+                  <p className="text-[11px] font-medium text-gray-500">Cantidad</p>
+                </div>
+                <p className="text-xl font-bold text-gray-800">{item.cantidadTotal}</p>
+              </div>
+            </div>
+
+            {/* Estado y Descripción en grid simétrico */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Estado */}
+              <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-lg bg-gray-200">
+                    <svg className="w-3.5 h-3.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-600">Estado actual</p>
+                </div>
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold ${status.bg} ${status.text}`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${status.dot}`} />
+                  {item.estado?.nombre || item.estado}
+                </span>
+              </div>
+
+              {/* Descripción */}
+              <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-lg bg-gray-200">
+                    <svg className="w-3.5 h-3.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-600">Descripción</p>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">{item.descripcion || "Sin descripción"}</p>
+              </div>
+            </div>
+
+            {/* Cambiar estado (solo admin) */}
+            {isAdmin && (
+              <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 rounded-lg bg-blue-100">
+                    <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </div>
+                  <p className="text-xs font-semibold text-blue-700">Cambiar estado</p>
+                </div>
+                {loadingEstados ? (
+                  <div className="flex items-center gap-2">
+                    <InlineSpinner size="sm" />
+                    <p className="text-xs text-gray-500">Cargando estados...</p>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedEstadoId || ""}
+                    onChange={(e) => setSelectedEstadoId(Number(e.target.value))}
+                    className="w-full rounded-xl border border-blue-300 bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="">-- Selecciona estado --</option>
+                    {estados.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.nombre}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+
+            {/* Error */}
+            {errorSave && (
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3.5 flex items-center gap-2.5">
+                <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-xs text-red-700">{errorSave}</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <select
-            value={selectedEstadoId || ""}
-            onChange={(e) => setSelectedEstadoId(Number(e.target.value))}
-            className="w-full rounded-lg border border-blue-300 px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">-- Selecciona estado --</option>
-            {estados.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nombre}
-              </option>
-            ))}
-          </select>
         )}
-      </div>
-    )}
-
-    {/* Error */}
-    {errorSave && (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-2.5">
-        <p className="text-[10px] text-red-700">{errorSave}</p>
-      </div>
-    )}
-  </div>
-)}
 
         {activeTab === "archivos" && (
           <div className="rounded-xl bg-gray-50 p-5 text-sm text-gray-700">
@@ -652,22 +781,21 @@ setObservaciones(ordered2);
                 <p className="text-xs text-gray-500 text-center">No hay observaciones. Inicia la conversación.</p>
               ) : (
                 observaciones.map((obs) => {
-const myId = String(currentUserId ?? "");
-const isOwnMessage =
-  String(obs.idUsuario ?? "") === myId || String(obs.usuario?.id ?? "") === myId;
+                  const myId = String(currentUserId ?? "");
+                  const isOwnMessage =
+                    String(obs.idUsuario ?? "") === myId || String(obs.usuario?.id ?? "") === myId;
 
-                  
+
                   return (
                     <div
                       key={obs.id}
                       className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[75%] rounded-lg px-3 py-2 ${
-                          isOwnMessage
-                            ? "bg-orange-500 text-white"
-                            : "bg-white border border-gray-200 text-gray-800"
-                        }`}
+                        className={`max-w-[75%] rounded-lg px-3 py-2 ${isOwnMessage
+                          ? "bg-orange-500 text-white"
+                          : "bg-white border border-gray-200 text-gray-800"
+                          }`}
                       >
                         <p className={`text-[10px] font-semibold mb-1 ${isOwnMessage ? "text-orange-100" : "text-gray-600"}`}>
                           {obs.usuario?.nombre || obs.usuario?.email || "Sistema"}

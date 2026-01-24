@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logoImage from "../assets/logo20.png";
 
+// Función para convertir email a nombre legible
+const emailToName = (email) => {
+  if (!email) return "Usuario";
+  const base = email.split("@")[0] || "Usuario";
+  return base.charAt(0).toUpperCase() + base.slice(1);
+};
+
 export const DashboardHeader = ({
-  userName,
-  roleLabel = "Usuario",
+  userName: userNameProp,
+  roleLabel: roleLabelProp,
   notificacionesNoLeidas = 0,
   onOpenNotificaciones,
   showBackButton = false,
@@ -16,6 +23,26 @@ export const DashboardHeader = ({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
+
+  // Obtener userName y roleLabel de manera consistente
+  // Siempre convertir email a nombre legible
+  const { userName, roleLabel } = useMemo(() => {
+    const storedEmail = localStorage.getItem("userCorreo");
+    const storedRole = localStorage.getItem("userRol") || "Usuario";
+
+    // Usar el prop si existe, sino usar localStorage
+    const rawUserName = userNameProp || storedEmail;
+
+    // Si parece un email (contiene @), convertirlo a nombre
+    const displayName = rawUserName?.includes("@")
+      ? emailToName(rawUserName)
+      : (rawUserName || "Usuario");
+
+    return {
+      userName: displayName,
+      roleLabel: roleLabelProp || storedRole,
+    };
+  }, [userNameProp, roleLabelProp]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -83,7 +110,7 @@ export const DashboardHeader = ({
                   aria-label="Notificaciones"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   {notificacionesNoLeidas > 0 && (
                     <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-bold shadow-md animate-pulse">
@@ -95,13 +122,13 @@ export const DashboardHeader = ({
 
               {/* Settings Button (optional for admin) */}
               {roleLabel === "Administrador" && (
-                <button 
+                <button
                   className="text-gray-500 hover:text-orange-600 p-2 rounded-lg hover:bg-orange-50 transition-colors"
                   aria-label="Configuración"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </button>
               )}
@@ -113,7 +140,7 @@ export const DashboardHeader = ({
                   <p className="text-sm font-semibold text-gray-800">{userName}</p>
                   <p className="text-xs text-gray-500">{roleLabel}</p>
                 </div>
-                
+
                 {/* Avatar */}
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold shadow-md ring-2 ring-orange-100">
                   {userName.substring(0, 2).toUpperCase()}
@@ -126,7 +153,7 @@ export const DashboardHeader = ({
                 className="hidden md:flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-2.5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm hover:shadow-md"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </button>
 
@@ -171,7 +198,7 @@ export const DashboardHeader = ({
                   >
                     <div className="flex items-center space-x-3">
                       <svg className="w-5 h-5 text-gray-500 group-hover:text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                       </svg>
                       <span className="text-sm font-medium text-gray-700 group-hover:text-orange-600">Notificaciones</span>
                     </div>
@@ -189,8 +216,8 @@ export const DashboardHeader = ({
                     className="flex items-center space-x-3 w-full rounded-lg px-4 py-3 hover:bg-orange-50 transition-colors group"
                   >
                     <svg className="w-5 h-5 text-gray-500 group-hover:text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span className="text-sm font-medium text-gray-700 group-hover:text-orange-600">Configuración</span>
                   </button>
@@ -204,7 +231,7 @@ export const DashboardHeader = ({
                   className="flex items-center space-x-3 w-full rounded-lg px-4 py-3 text-red-600 hover:bg-red-50 transition-colors group"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                   <span className="text-sm font-medium">Cerrar sesión</span>
                 </button>
@@ -220,7 +247,7 @@ export const DashboardHeader = ({
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-scaleIn">
             <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </div>
             <h3 className="text-lg font-bold text-gray-800 text-center mb-2">¿Cerrar sesión?</h3>
@@ -228,14 +255,14 @@ export const DashboardHeader = ({
               Tendrás que iniciar sesión nuevamente para acceder al sistema.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <button 
-                onClick={() => setShowLogoutModal(false)} 
+              <button
+                onClick={() => setShowLogoutModal(false)}
                 className="rounded-lg bg-gray-100 px-4 py-3 font-semibold text-gray-700 hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                onClick={handleLogout} 
+              <button
+                onClick={handleLogout}
                 className="rounded-lg bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 transition-colors shadow-md"
               >
                 Cerrar sesión

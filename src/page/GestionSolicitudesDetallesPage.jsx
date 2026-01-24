@@ -6,7 +6,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { ResultModal } from "../components/ResultModal";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Breadcrumb } from "../components/Breadcrumb";
-import { LoadingSpinner } from "../components/LoadingSpinner";
+import { PageLoader } from "../components/LoadingSpinner";
 import { API_URL } from "../services";
 import { formatFecha } from "../utils/solicitudesUi";
 
@@ -84,50 +84,65 @@ export const GestionSolicitudesDetallesPage = () => {
         if (!res.ok) return;
         const data = await res.json();
         setEstados(Array.isArray(data) ? data : []);
-      } catch (_) {}
+      } catch (_) { }
     })();
     return () => controller.abort();
   }, []);
 
-  // Fetch detalles del archivo
+  // Función para cargar/refrescar los datos
+  const fetchDetails = async (signal) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/archivos/detalles/${id}`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        signal: signal,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || errData.message || "Error al cargar detalles");
+      }
+
+      const api = await res.json();
+      const mapped = mapApiToUi(api);
+
+      setFile(mapped.file);
+      setSolicitudes(mapped.menuSolicitudes);
+
+      // Mantener solicitud activa si existe
+      setSolicitudActivaId((prevId) => {
+        const exists = mapped.menuSolicitudes.some((s) => String(s.id) === String(prevId));
+        return exists ? prevId : mapped.menuSolicitudes[0]?.id ?? null;
+      });
+      originalRef.current = deepClone(mapped.menuSolicitudes);
+      return true;
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        setError(e.message || "Error inesperado");
+      }
+      return false;
+    }
+  };
+
+  // Función de refresh para callbacks (sin loading)
+  const refreshData = async () => {
+    await fetchDetails();
+  };
+
+  // Carga inicial de datos
   useEffect(() => {
     if (!id) return;
 
     const controller = new AbortController();
 
-    const fetchDetails = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_URL}/archivos/detalles/${id}`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || errData.message || "Error al cargar detalles");
-        }
-
-        const api = await res.json();
-        const mapped = mapApiToUi(api);
-
-        setFile(mapped.file);
-        setSolicitudes(mapped.menuSolicitudes);
-
-        const firstId = mapped.menuSolicitudes[0]?.id ?? null;
-        setSolicitudActivaId(firstId);
-        originalRef.current = deepClone(mapped.menuSolicitudes);
-      } catch (e) {
-        if (e.name !== "AbortError") setError(e.message || "Error inesperado");
-      } finally {
-        setLoading(false);
-      }
+    const loadData = async () => {
+      setLoading(true);
+      setError("");
+      await fetchDetails(controller.signal);
+      setLoading(false);
     };
 
-    fetchDetails();
+    loadData();
     return () => controller.abort();
   }, [id]);
 
@@ -292,11 +307,7 @@ export const GestionSolicitudesDetallesPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen grid place-items-center bg-gray-100">
-        <LoadingSpinner size="lg" text="Cargando detalles..." />
-      </div>
-    );
+    return <PageLoader text="Cargando detalles de la solicitud..." />;
   }
 
   if (error) {
@@ -364,7 +375,7 @@ export const GestionSolicitudesDetallesPage = () => {
                 </div>
                 <div className={`${colorClasses[stat.color]} p-2 rounded-lg`}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon}/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon} />
                   </svg>
                 </div>
               </div>
@@ -533,7 +544,7 @@ export const GestionSolicitudesDetallesPage = () => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onClose={closeItemModal}
-        onItemUpdated={() => window.location.reload()}
+        onItemUpdated={refreshData}
         approvingDisabled={false}
       />
 

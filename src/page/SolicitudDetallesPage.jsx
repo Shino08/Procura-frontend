@@ -4,6 +4,7 @@ import { ModalConfirm } from "../components/ModalConfirm";
 import { ItemDetailsModal } from "../components/ItemDetailsModal";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { PageLoader } from "../components/LoadingSpinner";
 import { API_URL } from "../services";
 import { ITEMS_PER_PAGE, formatArchivoId, formatFecha } from "../utils/solicitudesUi";
 
@@ -40,14 +41,14 @@ const mapApiToUi = (data) => {
 
   const header = file
     ? {
-        archivoId: file.id,
-        id: formatArchivoId(file.id),
-        fecha: file.fechaCreacion,
-        nombreArchivo: file.nombre,
-        totalItems: totalItemsArchivo,
-        observaciones: `Solicitudes asociadas: ${mappedSolicitudes.length}`,
-        url: file.url,
-      }
+      archivoId: file.id,
+      id: formatArchivoId(file.id),
+      fecha: file.fechaCreacion,
+      nombreArchivo: file.nombre,
+      totalItems: totalItemsArchivo,
+      observaciones: `Solicitudes asociadas: ${mappedSolicitudes.length}`,
+      url: file.url,
+    }
     : null;
 
   return { header, mappedSolicitudes };
@@ -98,48 +99,67 @@ export const SolicitudDetallesPage = () => {
         if (!res.ok) return;
         const data = await res.json();
         setEstados(Array.isArray(data) ? data : []);
-      } catch (_) {}
+      } catch (_) { }
     })();
     return () => controller.abort();
   }, []);
 
+  // Función para cargar/refrescar los datos
+  const fetchDetails = async (signal) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/archivos/detalles/${fileId}`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        signal: signal,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || errData.message || "Error al obtener detalles");
+      }
+
+      const data = await res.json();
+      const { header, mappedSolicitudes } = mapApiToUi(data);
+
+      if (!header) throw new Error("Archivo no encontrado.");
+
+      setHeader(header);
+      setSolicitudes(mappedSolicitudes);
+
+      // Mantener la solicitud activa si aún existe, sino usar la primera
+      setSolicitudActivaId((prevId) => {
+        const exists = mappedSolicitudes.some((s) => String(s.id) === String(prevId));
+        return exists ? prevId : mappedSolicitudes[0]?.id ?? null;
+      });
+
+      return true;
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        setError(e.message || "Error inesperado");
+      }
+      return false;
+    }
+  };
+
+  // Función de refresh para usar en callbacks (sin loading)
+  const refreshData = async () => {
+    await fetchDetails();
+  };
+
+  // Carga inicial de datos
   useEffect(() => {
     if (!fileId) return;
 
     const controller = new AbortController();
 
-    const fetchDetails = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_URL}/archivos/detalles/${fileId}`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || errData.message || "Error al obtener detalles");
-        }
-
-        const data = await res.json();
-        const { header, mappedSolicitudes } = mapApiToUi(data);
-
-        if (!header) throw new Error("Archivo no encontrado.");
-
-        setHeader(header);
-        setSolicitudes(mappedSolicitudes);
-        setSolicitudActivaId(mappedSolicitudes[0]?.id ?? null);
-      } catch (e) {
-        if (e.name !== "AbortError") setError(e.message || "Error inesperado");
-      } finally {
-        setLoading(false);
-      }
+    const loadData = async () => {
+      setLoading(true);
+      setError("");
+      await fetchDetails(controller.signal);
+      setLoading(false);
     };
 
-    fetchDetails();
+    loadData();
     return () => controller.abort();
   }, [fileId]);
 
@@ -150,7 +170,7 @@ export const SolicitudDetallesPage = () => {
     setDownloading(true);
     try {
       const token = localStorage.getItem("token");
-      
+
       const response = await fetch(`${API_URL}/archivos/${header.archivoId}/descargar`, {
         method: "GET",
         headers: {
@@ -169,7 +189,7 @@ export const SolicitudDetallesPage = () => {
       const link = document.createElement("a");
       link.href = url;
       link.download = header.nombreArchivo || `solicitud-${header.id}.pdf`;
-      
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -193,7 +213,7 @@ export const SolicitudDetallesPage = () => {
     setGeneratingPdf(true);
     try {
       const token = localStorage.getItem("token");
-      
+
       const response = await fetch(`${API_URL}/generar-pdf/${solicitudActivaId}`, {
         method: "GET",
         headers: {
@@ -215,20 +235,20 @@ export const SolicitudDetallesPage = () => {
       // Crear enlace de descarga
       const link = document.createElement("a");
       link.href = url;
-      
+
       // Obtener nombre del archivo desde el header Content-Disposition o usar uno por defecto
       const contentDisposition = response.headers.get('content-disposition');
       let filename = `reporte-solicitud-${solicitudActivaId}.pdf`;
-      
+
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1];
         }
       }
-      
+
       link.download = filename;
-      
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -345,15 +365,9 @@ export const SolicitudDetallesPage = () => {
     }
   };
 
+  // Estados de carga y error deben evaluarse primero
   if (loading) {
-    return (
-      <div className="min-h-screen grid place-items-center bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-sm text-gray-600">Cargando detalles...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader text="Cargando detalles de la solicitud..." />;
   }
 
   if (error) {
@@ -366,7 +380,8 @@ export const SolicitudDetallesPage = () => {
     );
   }
 
-  if (!header) {
+  // Solo mostrar "No se encontraron datos" si ya terminó de cargar y no hay header
+  if (!loading && !header) {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-100 p-4">
         <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
@@ -430,7 +445,7 @@ export const SolicitudDetallesPage = () => {
                 </div>
                 <div className={`${colorClasses[stat.color]} p-2 rounded-lg`}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon}/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon} />
                   </svg>
                 </div>
               </div>
@@ -487,11 +502,10 @@ export const SolicitudDetallesPage = () => {
                   <button
                     onClick={handleDownload}
                     disabled={downloading}
-                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                      downloading
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md"
-                    }`}
+                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${downloading
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md"
+                      }`}
                   >
                     {downloading ? (
                       <>
@@ -542,11 +556,10 @@ export const SolicitudDetallesPage = () => {
                   <button
                     onClick={handleGeneratePdf}
                     disabled={generatingPdf}
-                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                      generatingPdf
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-orange-500 hover:bg-orange-600 text-white shadow-sm hover:shadow-md"
-                    }`}
+                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${generatingPdf
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-orange-500 hover:bg-orange-600 text-white shadow-sm hover:shadow-md"
+                      }`}
                   >
                     {generatingPdf ? (
                       <>
@@ -726,6 +739,7 @@ export const SolicitudDetallesPage = () => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onClose={closeItemModal}
+        onItemUpdated={refreshData}
         onApproveClick={startApprove}
         approvingDisabled={false}
       />
