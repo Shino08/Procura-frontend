@@ -60,17 +60,17 @@ export const UsuarioDashboard = ({ token, userName }) => {
 
   const quickActions = useMemo(
     () => [
-      { 
-        title: "Nueva Solicitud", 
-        description: "Crear solicitud de compra", 
-        link: "/solicitudes/nueva", 
+      {
+        title: "Nueva Solicitud",
+        description: "Crear solicitud de compra",
+        link: "/solicitudes/nueva",
         primary: true,
         icon: "M12 4v16m8-8H4"
       },
-      { 
-        title: "Mis Solicitudes", 
-        description: "Ver historial completo", 
-        link: "/solicitudes/usuario", 
+      {
+        title: "Mis Solicitudes",
+        description: "Ver historial completo",
+        link: "/solicitudes/usuario",
         primary: false,
         icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
       },
@@ -147,49 +147,49 @@ export const UsuarioDashboard = ({ token, userName }) => {
       />
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 pb-12">
+      <main className="container mx-auto px-4 sm:px-6 pb-8 sm:pb-12">
         {/* Welcome Section */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">¡Hola, {userName}!</h2>
-          <p className="mt-1 text-sm text-gray-600">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">¡Hola, {userName}!</h2>
+          <p className="mt-1 text-xs sm:text-sm text-gray-600">
             Administra tus solicitudes y haz seguimiento.
           </p>
         </div>
 
         {/* Stats Cards con efectos hover mejorados */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-4 sm:mb-6">
           {statCards.map((stat, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className="group relative bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-1"
             >
               {/* Borde superior con gradiente */}
-              <div className={`h-1 bg-gradient-to-r ${stat.bgGradient}`}/>
-              
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <p className="text-gray-500 text-xs font-medium mb-1">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900 transition-colors group-hover:text-gray-700">
+              <div className={`h-1 bg-gradient-to-r ${stat.bgGradient}`} />
+
+              <div className="p-3 sm:p-5">
+                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-500 text-[10px] sm:text-xs font-medium mb-1 truncate">{stat.title}</p>
+                    <p className="text-xl sm:text-3xl font-bold text-gray-900 transition-colors group-hover:text-gray-700">
                       {loadingStats ? (
-                        <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"/>
+                        <span className="inline-block w-12 sm:w-16 h-6 sm:h-8 bg-gray-200 animate-pulse rounded" />
                       ) : (
                         stat.value
                       )}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-1 truncate">{stat.subtitle}</p>
                   </div>
-                  <div className={`${colorClasses[stat.color].bg} p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6`}>
-                    <svg 
-                      className={`w-5 h-5 ${colorClasses[stat.color].text}`} 
-                      fill="none" 
-                      stroke="currentColor" 
+                  <div className={`${colorClasses[stat.color].bg} p-1.5 sm:p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 flex-shrink-0 ml-2`}>
+                    <svg
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${colorClasses[stat.color].text}`}
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                       strokeWidth="2"
                     >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         d={stat.iconPath}
                       />
                     </svg>
@@ -198,10 +198,10 @@ export const UsuarioDashboard = ({ token, userName }) => {
 
                 {/* Barra de progreso para rendimiento */}
                 {stat.title === "Rendimiento" && !loadingStats && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                      <div 
-                        className={`h-1.5 rounded-full bg-gradient-to-r ${stat.bgGradient} transition-all duration-500`}
+                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
+                    <div className="w-full bg-gray-200 rounded-full h-1 sm:h-1.5">
+                      <div
+                        className={`h-1 sm:h-1.5 rounded-full bg-gradient-to-r ${stat.bgGradient} transition-all duration-500`}
                         style={{ width: `${stats.rendimiento}%` }}
                       />
                     </div>
@@ -210,67 +210,63 @@ export const UsuarioDashboard = ({ token, userName }) => {
               </div>
 
               {/* Efecto de brillo en hover */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none`}/>
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none`} />
             </div>
           ))}
         </div>
 
         {/* Quick Actions con menos padding */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Acciones Rápidas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Acciones Rápidas</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
             {quickActions.map((action) => (
               <Link
                 key={action.link}
                 to={action.link}
-                className={`group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
-                  action.primary ? 'ring-2 ring-orange-500 ring-opacity-50' : ''
-                }`}
+                className={`group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${action.primary ? 'ring-2 ring-orange-500 ring-opacity-50' : ''
+                  }`}
               >
-                <div className="p-5">
+                <div className="p-4 sm:p-5">
                   {/* Icono y badge */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`p-2.5 rounded-xl ${
-                      action.primary 
-                        ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' 
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className={`p-2 sm:p-2.5 rounded-xl ${action.primary
+                        ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white'
                         : 'bg-gray-100 text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600'
-                    } transition-colors`}>
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={action.icon}/>
+                      } transition-colors`}>
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={action.icon} />
                       </svg>
                     </div>
                   </div>
 
                   {/* Contenido */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">
                     {action.title}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 leading-relaxed">
                     {action.description}
                   </p>
 
                   {/* CTA */}
-                  <div className={`inline-flex items-center gap-2 text-sm font-semibold ${
-                    action.primary ? 'text-orange-600' : 'text-gray-600 group-hover:text-blue-600'
-                  } transition-colors`}>
+                  <div className={`inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold ${action.primary ? 'text-orange-600' : 'text-gray-600 group-hover:text-blue-600'
+                    } transition-colors`}>
                     {action.primary ? "Comenzar ahora" : "Ir al módulo"}
-                    <svg 
-                      className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" 
-                      fill="none" 
-                      stroke="currentColor" 
+                    <svg
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform"
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
                 </div>
 
                 {/* Borde inferior con gradiente (solo en hover) */}
-                <div className={`h-1 bg-gradient-to-r ${
-                  action.primary 
-                    ? 'from-orange-500 to-orange-600' 
+                <div className={`h-1 bg-gradient-to-r ${action.primary
+                    ? 'from-orange-500 to-orange-600'
                     : 'from-blue-500 to-blue-600'
-                } transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left`}/>
+                  } transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left`} />
               </Link>
             ))}
           </div>
@@ -287,9 +283,9 @@ export const UsuarioDashboard = ({ token, userName }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row justify-center items-center gap-4 text-sm text-gray-600">
+      <footer className="bg-white border-t border-gray-200 mt-8 sm:mt-12">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-4 text-xs sm:text-sm text-gray-600 text-center">
             <p>© 2026 Sistema Procura - Business & Development. Todos los derechos reservados.</p>
           </div>
         </div>
@@ -310,7 +306,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">¿Cerrar sesión?</h3>
@@ -319,21 +315,21 @@ export const UsuarioDashboard = ({ token, userName }) => {
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <button 
-                onClick={() => setShowLogoutModal(false)} 
+              <button
+                onClick={() => setShowLogoutModal(false)}
                 className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 font-semibold text-gray-700 transition-colors inline-flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 Cancelar
               </button>
-              <button 
-                onClick={confirmLogout} 
+              <button
+                onClick={confirmLogout}
                 className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 font-semibold text-white transition-colors inline-flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 Cerrar sesión
               </button>

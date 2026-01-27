@@ -427,24 +427,24 @@ export const SolicitudDetallesPage = () => {
       />
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-6">
+      <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
         {/* Page Title */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Detalle de Solicitud</h1>
-          <p className="text-sm text-gray-600">{header.nombreArchivo}</p>
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Detalle de Solicitud</h1>
+          <p className="text-xs sm:text-sm text-gray-600 break-all">{header.nombreArchivo}</p>
         </div>
 
-        {/* Stats Cards Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        {/* Stats Cards Grid - Responsive: 1 col mobile, 2 sm, 3 md, 5 lg */}
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {statsCards.map((stat, idx) => (
-            <div key={idx} className="bg-white rounded-lg shadow-sm p-5">
+            <div key={idx} className="bg-white rounded-lg shadow-sm p-4 sm:p-5">
               <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 mb-1 truncate">{stat.label}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stat.value}</p>
                 </div>
-                <div className={`${colorClasses[stat.color]} p-2 rounded-lg`}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={`${colorClasses[stat.color]} p-2 rounded-lg flex-shrink-0 ml-2`}>
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon} />
                   </svg>
                 </div>
@@ -454,11 +454,11 @@ export const SolicitudDetallesPage = () => {
         </div>
 
         {/* File Info + Selector */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mb-4 sm:mb-6 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           {/* File Info */}
-          <div className="bg-white rounded-lg shadow-sm p-5">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Información del Archivo</h3>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               <div>
                 <p className="text-xs text-gray-500">Fecha de carga</p>
                 <p className="text-sm font-semibold text-gray-800">{formatFecha(header.fecha)}</p>
@@ -467,7 +467,7 @@ export const SolicitudDetallesPage = () => {
                 <p className="text-xs text-gray-500">Total ítems</p>
                 <p className="text-sm font-semibold text-gray-800">{header.totalItems}</p>
               </div>
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <p className="text-xs text-gray-500">Observaciones</p>
                 <p className="text-sm font-semibold text-gray-800 line-clamp-2">{header.observaciones}</p>
               </div>
@@ -476,7 +476,7 @@ export const SolicitudDetallesPage = () => {
 
           {/* Solicitud Selector + Botones de Descarga */}
           {solicitudes.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm p-5">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Solicitud / Hoja
               </label>
@@ -495,14 +495,14 @@ export const SolicitudDetallesPage = () => {
                 ))}
               </select>
 
-              {/* Botones de descarga */}
-              <div className="mt-4 space-y-2">
+              {/* Botones de descarga - stack en mobile, row en sm+ */}
+              <div className="mt-4 flex flex-col sm:flex-row gap-2">
                 {/* BOTÓN DESCARGAR ARCHIVO ORIGINAL */}
                 {header?.archivoId && (
                   <button
                     onClick={handleDownload}
                     disabled={downloading}
-                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${downloading
+                    className={`flex-1 inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${downloading
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md"
                       }`}
@@ -528,12 +528,13 @@ export const SolicitudDetallesPage = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           />
                         </svg>
-                        Descargando...
+                        <span className="hidden xs:inline">Descargando...</span>
+                        <span className="xs:hidden">...</span>
                       </>
                     ) : (
                       <>
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -545,7 +546,8 @@ export const SolicitudDetallesPage = () => {
                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                           />
                         </svg>
-                        Descargar Archivo Original
+                        <span className="hidden sm:inline">Descargar Original</span>
+                        <span className="sm:hidden">Descargar</span>
                       </>
                     )}
                   </button>
@@ -556,7 +558,7 @@ export const SolicitudDetallesPage = () => {
                   <button
                     onClick={handleGeneratePdf}
                     disabled={generatingPdf}
-                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${generatingPdf
+                    className={`flex-1 inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${generatingPdf
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-orange-500 hover:bg-orange-600 text-white shadow-sm hover:shadow-md"
                       }`}
@@ -582,12 +584,13 @@ export const SolicitudDetallesPage = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           />
                         </svg>
-                        Generando PDF...
+                        <span className="hidden xs:inline">Generando...</span>
+                        <span className="xs:hidden">...</span>
                       </>
                     ) : (
                       <>
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -599,15 +602,17 @@ export const SolicitudDetallesPage = () => {
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                           />
                         </svg>
-                        Generar PDF Aprobados ({stats.aprobados})
+                        <span className="hidden sm:inline">PDF Aprobados ({stats.aprobados})</span>
+                        <span className="sm:hidden">PDF ({stats.aprobados})</span>
                       </>
                     )}
                   </button>
                 )}
 
                 {solicitudActivaId && stats.aprobados === 0 && (
-                  <div className="w-full px-4 py-2.5 rounded-lg text-sm text-gray-500 bg-gray-50 border border-gray-200 text-center">
-                    No hay ítems aprobados para generar PDF
+                  <div className="flex-1 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm text-gray-500 bg-gray-50 border border-gray-200 text-center">
+                    <span className="hidden sm:inline">No hay ítems aprobados para generar PDF</span>
+                    <span className="sm:hidden">Sin ítems aprobados</span>
                   </div>
                 )}
               </div>
@@ -616,8 +621,8 @@ export const SolicitudDetallesPage = () => {
         </div>
 
         {/* Search + Filter */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm p-5">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="mb-4 sm:mb-6 bg-white rounded-lg shadow-sm p-4 sm:p-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
               value={searchTerm}
               onChange={(e) => onSearch(e.target.value)}
@@ -640,20 +645,51 @@ export const SolicitudDetallesPage = () => {
           </div>
         </div>
 
-        {/* Items Table */}
+        {/* Items Section */}
         <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900">Ítems de la Solicitud</h2>
-            <p className="text-sm text-gray-600">{filteredItems.length} ítem{filteredItems.length !== 1 ? 's' : ''} encontrado{filteredItems.length !== 1 ? 's' : ''}</p>
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">Ítems de la Solicitud</h2>
+            <p className="text-xs sm:text-sm text-gray-600">{filteredItems.length} ítem{filteredItems.length !== 1 ? 's' : ''} encontrado{filteredItems.length !== 1 ? 's' : ''}</p>
           </div>
 
           {currentItems.length === 0 ? (
-            <div className="p-10 text-center text-sm text-gray-600">
+            <div className="p-8 sm:p-10 text-center text-sm text-gray-600">
               No se encontraron ítems con los filtros aplicados.
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile Cards View */}
+              <div className="block md:hidden divide-y divide-gray-100">
+                {currentItems.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => openItem(item)}
+                    className="p-4 hover:bg-gray-50 cursor-pointer active:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-semibold text-gray-500">#{item.linea}</span>
+                          <span className="text-sm font-mono text-gray-700 truncate">{item.codigo}</span>
+                        </div>
+                        <p className="text-sm text-gray-800 line-clamp-2">{item.descripcion}</p>
+                      </div>
+                      <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700 flex-shrink-0">
+                        {item.estado}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center gap-3">
+                        <span><strong className="text-gray-700">{item.cantidadTotal}</strong> {item.unidad}</span>
+                      </div>
+                      <span className="truncate max-w-[150px]" title={item.ultimaObservacion}>{item.ultimaObservacion}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
@@ -686,7 +722,7 @@ export const SolicitudDetallesPage = () => {
                             {item.estado}
                           </span>
                         </td>
-                        <td className="py-4 px-4 text-sm text-gray-600 font-medium">{item.ultimaObservacion}</td>
+                        <td className="py-4 px-4 text-sm text-gray-600 font-medium max-w-xs truncate" title={item.ultimaObservacion}>{item.ultimaObservacion}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -695,27 +731,29 @@ export const SolicitudDetallesPage = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="px-6 py-4 border-t border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="text-sm text-gray-600">
+                <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                     Mostrando {startIndex + 1} - {Math.min(endIndex, filteredItems.length)} de {filteredItems.length}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Anterior
+                      <span className="hidden sm:inline">Anterior</span>
+                      <span className="sm:hidden">←</span>
                     </button>
-                    <span className="rounded-lg bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-700">
+                    <span className="rounded-lg bg-gray-50 px-3 py-2 text-xs sm:text-sm font-semibold text-gray-700 min-w-[60px] text-center">
                       {currentPage} / {totalPages}
                     </span>
                     <button
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Siguiente
+                      <span className="hidden sm:inline">Siguiente</span>
+                      <span className="sm:hidden">→</span>
                     </button>
                   </div>
                 </div>

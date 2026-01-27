@@ -55,7 +55,6 @@ export const SolicitudesRecientes = ({
         }
 
         const data = await res.json();
-        console.log(data);
 
         const mapped = Array.isArray(data?.archivos) ? data.archivos : [];
         setRows(mapped);

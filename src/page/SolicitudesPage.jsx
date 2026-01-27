@@ -68,10 +68,10 @@ export const SolicitudesPage = () => {
 
     const filtered = term
       ? archivos.filter((a) => {
-          const idMatch = a.id.toLowerCase().includes(term);
-          const fileMatch = (a.nombre || "").toLowerCase().includes(term);
-          return idMatch || fileMatch;
-        })
+        const idMatch = a.id.toLowerCase().includes(term);
+        const fileMatch = (a.nombre || "").toLowerCase().includes(term);
+        return idMatch || fileMatch;
+      })
       : archivos;
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -255,7 +255,7 @@ export const SolicitudesPage = () => {
 
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-800">{a.id}</p>
-                      <p className="text-xs text-gray-500">{formatFecha(a.fecha)}</p>
+                      <p className="text-xs text-gray-500">{formatFecha(a.fechaCreacion)}</p>
                     </div>
                   </div>
 
@@ -307,11 +307,10 @@ export const SolicitudesPage = () => {
                 <button
                   key={n}
                   onClick={() => setCurrentPage(n)}
-                  className={`hidden rounded-lg px-3 py-2 text-sm font-medium sm:block ${
-                    currentPage === n
+                  className={`hidden rounded-lg px-3 py-2 text-sm font-medium sm:block ${currentPage === n
                       ? "bg-orange-500 text-white"
                       : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   {n}
                 </button>

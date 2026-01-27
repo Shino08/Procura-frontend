@@ -38,13 +38,13 @@ export const NuevaSolicitudPage = () => {
   // ============ EXTRACTOR UNIVERSAL ============
   const findHeaderRow = (rawData) => {
     const keywords = ['Item', 'Código', 'NO DE ITEM', 'DESCRIPCION', 'Descripción', 'UNIDAD', 'Cant', 'REQUISICIÓN', 'Observaciones', 'PRIORIDAD'];
-    
+
     for (let i = 0; i < Math.min(20, rawData.length); i++) {
       const row = rawData[i];
-      const matchCount = keywords.filter(kw => 
+      const matchCount = keywords.filter(kw =>
         row.some(cell => cell && cell.toString().trim().toUpperCase().includes(kw.toUpperCase()))
       ).length;
-      
+
       if (matchCount >= 2) return i;
     }
     return 0;
@@ -65,13 +65,13 @@ export const NuevaSolicitudPage = () => {
     return row.some(cell => {
       const value = (cell || '').toString().trim();
       if (!value || value.length === 0 || /^-+$/.test(value)) return false;
-      
+
       const excludePatterns = [
         /^(ITEM|CODIGO|DESCRIPCI[OÓ]N|UNIDAD|CANT|OBSERV)/i,
         /^(TOTAL|RESUMEN|SUMMARY|PROYECTO|REQUISICIÓN|PRIORIDAD)/i,
         /^(Unnamed:|FO-PROC|ASOCIACION)/i
       ];
-      
+
       return !excludePatterns.some(p => p.test(value));
     });
   };
@@ -158,110 +158,110 @@ export const NuevaSolicitudPage = () => {
     });
   };
 
-// ============ GUARDAR SOLICITUD POR HOJA ============
-const handleGuardarSolicitudHoja = async () => {
-  if (!excelData || !activeSheet) return;
+  // ============ GUARDAR SOLICITUD POR HOJA ============
+  const handleGuardarSolicitudHoja = async () => {
+    if (!excelData || !activeSheet) return;
 
-  const sheet = excelData[activeSheet];
-  if (!sheet?.data?.length) {
-    return showModal('error', 'Sin datos', 'La hoja no tiene materiales.');
-  }
-
-  try {
-    setGuardando(true);
-
-    const token = localStorage.getItem('token');
-    const userIdRaw = localStorage.getItem('userId') ?? localStorage.getItem('id');
-    const userId = Number(userIdRaw);
-
-    if (!userId || Number.isNaN(userId)) {
-      throw new Error('No hay userId válido en localStorage (userId/id).');
+    const sheet = excelData[activeSheet];
+    if (!sheet?.data?.length) {
+      return showModal('error', 'Sin datos', 'La hoja no tiene materiales.');
     }
 
-    const data = sheet.data.map(({ id, ...rest }) => rest);
+    try {
+      setGuardando(true);
 
-    const payload = {
-      userId,
-      solicitud: {
-        nombre: sheet.nombre ?? 'Sin nombre',
-        descripcion: `Solicitud generada desde ${file?.name ?? 'archivo'} - Hoja ${sheet.nombre ?? activeSheet}`,
-      },
-      data,
-      archivoId: archivoId ?? null,
-      totalHojas: Object.keys(excelData).length,
-      archivoNombre: file?.name,        // <- AGREGAR
-      archivoTamanio: file?.size,       // <- AGREGAR
-    };
+      const token = localStorage.getItem('token');
+      const userIdRaw = localStorage.getItem('userId') ?? localStorage.getItem('id');
+      const userId = Number(userIdRaw);
 
-    let res;
-
-    if (!archivoId) {
-      if (!file) throw new Error('No hay archivo seleccionado para la primera hoja.');
-
-      const fd = new FormData();
-      fd.append('archivo', file);
-      fd.append('payload', JSON.stringify(payload));
-
-      res = await fetch(`${API_URL}/solicitudes`, {
-        method: 'POST',
-        headers: { Authorization: token ? `Bearer ${token}` : '' },
-        body: fd,
-      });
-    } else {
-      res = await fetch(`${API_URL}/solicitudes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-        body: JSON.stringify(payload),
-      });
-    }
-
-    // MANEJO ESPECÍFICO DE ERRORES
-    if (!res.ok) {
-      const errorData = await res.json();
-
-      // Detectar archivo duplicado (código 409)
-      if (res.status === 409) {
-        return showModal(
-          'error',
-          'Archivo Duplicado',
-          'Este archivo ya fue cargado anteriormente en el sistema. Por favor, verifica tus archivos o carga uno diferente.',
-          () => {
-            // Opcional: resetear y volver al paso 1
-            setFile(null);
-            setExcelData(null);
-            setActiveSheet(null);
-            setSavedSheets({});
-            setArchivoId(null);
-            setCurrentStep(1);
-          }
-        );
+      if (!userId || Number.isNaN(userId)) {
+        throw new Error('No hay userId válido en localStorage (userId/id).');
       }
 
-      // Otros errores
-      throw new Error(errorData.error || `Error ${res.status} al guardar solicitud`);
+      const data = sheet.data.map(({ id, ...rest }) => rest);
+
+      const payload = {
+        userId,
+        solicitud: {
+          nombre: sheet.nombre ?? 'Sin nombre',
+          descripcion: `Solicitud generada desde ${file?.name ?? 'archivo'} - Hoja ${sheet.nombre ?? activeSheet}`,
+        },
+        data,
+        archivoId: archivoId ?? null,
+        totalHojas: Object.keys(excelData).length,
+        archivoNombre: file?.name,        // <- AGREGAR
+        archivoTamanio: file?.size,       // <- AGREGAR
+      };
+
+      let res;
+
+      if (!archivoId) {
+        if (!file) throw new Error('No hay archivo seleccionado para la primera hoja.');
+
+        const fd = new FormData();
+        fd.append('archivo', file);
+        fd.append('payload', JSON.stringify(payload));
+
+        res = await fetch(`${API_URL}/solicitudes`, {
+          method: 'POST',
+          headers: { Authorization: token ? `Bearer ${token}` : '' },
+          body: fd,
+        });
+      } else {
+        res = await fetch(`${API_URL}/solicitudes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      // MANEJO ESPECÍFICO DE ERRORES
+      if (!res.ok) {
+        const errorData = await res.json();
+
+        // Detectar archivo duplicado (código 409)
+        if (res.status === 409) {
+          return showModal(
+            'error',
+            'Archivo Duplicado',
+            'Este archivo ya fue cargado anteriormente en el sistema. Por favor, verifica tus archivos o carga uno diferente.',
+            () => {
+              // Opcional: resetear y volver al paso 1
+              setFile(null);
+              setExcelData(null);
+              setActiveSheet(null);
+              setSavedSheets({});
+              setArchivoId(null);
+              setCurrentStep(1);
+            }
+          );
+        }
+
+        // Otros errores
+        throw new Error(errorData.error || `Error ${res.status} al guardar solicitud`);
+      }
+
+      const out = await res.json();
+
+      if (!archivoId && out.archivoId) {
+        setArchivoId(out.archivoId);
+      }
+
+      setSavedSheets((prev) => ({
+        ...prev,
+        [activeSheet]: { saved: true, solicitudId: out.solicitudId },
+      }));
+
+      showModal('success', 'Guardado', `Hoja "${sheet.nombre ?? activeSheet}" guardada.`);
+    } catch (e) {
+      showModal('error', 'Error', e.message);
+    } finally {
+      setGuardando(false);
     }
-
-    const out = await res.json();
-
-    if (!archivoId && out.archivoId) {
-      setArchivoId(out.archivoId);
-    }
-
-    setSavedSheets((prev) => ({
-      ...prev,
-      [activeSheet]: { saved: true, solicitudId: out.solicitudId },
-    }));
-
-    showModal('success', 'Guardado', `Hoja "${sheet.nombre ?? activeSheet}" guardada.`);
-  } catch (e) {
-    showModal('error', 'Error', e.message);
-  } finally {
-    setGuardando(false);
-  }
-};
+  };
 
   const handleCellEditSheet = (sheetName, id, field, value) => {
     setExcelData((prev) => ({
@@ -394,9 +394,8 @@ const handleGuardarSolicitudHoja = async () => {
 
             {!file ? (
               <div
-                className={`relative border-2 border-dashed rounded-xl p-10 transition-all ${
-                  dragActive ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-400 bg-gray-50'
-                }`}
+                className={`relative border-2 border-dashed rounded-xl p-10 transition-all ${dragActive ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-400 bg-gray-50'
+                  }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
@@ -458,56 +457,72 @@ const handleGuardarSolicitudHoja = async () => {
         )}
 
         {currentStep === 2 && excelData && activeSheet && (
-          <div className="space-y-4">
-            <div className="flex border-b border-gray-300 overflow-x-auto">
+          <div className="space-y-3 sm:space-y-4">
+            {/* Tabs de hojas - scroll horizontal en móvil */}
+            <div className="flex border-b border-gray-300 overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
               {Object.keys(excelData).map((sheetName) => (
                 <button
                   key={sheetName}
                   onClick={() => setActiveSheet(sheetName)}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
-                    activeSheet === sheetName ? 'text-blue-600 border-b-2 border-blue-600 bg-white' : 'text-gray-600 hover:text-gray-800'
-                  }`}
+                  className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium whitespace-nowrap flex-shrink-0 ${activeSheet === sheetName ? 'text-orange-600 border-b-2 border-orange-600 bg-white' : 'text-gray-600 hover:text-gray-800'
+                    }`}
                 >
-                  {sheetName}{savedSheets[sheetName]?.saved ? ' ✓' : ''}
+                  <span className="hidden sm:inline">{sheetName}</span>
+                  <span className="sm:hidden">{sheetName.length > 12 ? sheetName.substring(0, 12) + '...' : sheetName}</span>
+                  {savedSheets[sheetName]?.saved && <span className="ml-1 text-green-500">✓</span>}
                 </button>
               ))}
             </div>
 
-            <h2 className="text-lg font-semibold text-gray-800">
-              {activeSheet} ({excelData[activeSheet].data.length} registros)
+            {/* Header de la hoja activa */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+                <span className="hidden sm:inline">{activeSheet}</span>
+                <span className="sm:hidden">{activeSheet.length > 20 ? activeSheet.substring(0, 20) + '...' : activeSheet}</span>
+                <span className="text-gray-500 font-normal ml-1 sm:ml-2">({excelData[activeSheet].data.length} registros)</span>
+              </h2>
               {selectedRows.length > 0 && (
-                <span className="ml-3 text-sm font-normal text-blue-600">
-                  ({selectedRows.length} seleccionada{selectedRows.length > 1 ? 's' : ''})
+                <span className="text-xs sm:text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
+                  {selectedRows.length} seleccionada{selectedRows.length > 1 ? 's' : ''}
                 </span>
               )}
-            </h2>
+            </div>
 
+            {/* Barra de selección múltiple - responsive */}
             {selectedRows.length > 0 && (
-              <div className="mb-4 flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <span className="text-sm font-medium text-blue-800">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-xs sm:text-sm font-medium text-blue-800">
                   {selectedRows.length} fila{selectedRows.length > 1 ? 's' : ''} seleccionada{selectedRows.length > 1 ? 's' : ''}
                 </span>
-                <button
-                  onClick={handleEliminarSeleccionadas}
-                  className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Eliminar seleccionadas
-                </button>
-                <button
-                  onClick={() => setSelectedRows([])}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancelar selección
-                </button>
+                <div className="flex gap-2 sm:gap-3">
+                  <button
+                    onClick={handleEliminarSeleccionadas}
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-500 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                  <button
+                    onClick={() => setSelectedRows([])}
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 text-xs sm:text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             )}
 
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="overflow-x-auto max-h-[480px]">
-                <table className="w-full border-collapse">
+            {/* Tabla responsive con scroll horizontal - optimizada para grandes volúmenes */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+              {/* Indicador de scroll en móvil */}
+              <div className="block sm:hidden px-3 py-2 bg-gray-50 border-b border-gray-200 text-[10px] text-gray-500 text-center">
+                ← Desliza horizontalmente para ver más columnas →
+              </div>
+
+              <div className="overflow-x-auto max-h-[60vh] sm:max-h-[480px]">
+                <table className="w-full border-collapse min-w-[600px]">
                   <thead>
-                    <tr className="bg-gradient-to-r from-gray-700 to-gray-600 text-white text-left sticky top-0">
-                      <th className="px-4 py-3 text-sm font-semibold whitespace-nowrap w-12">
+                    <tr className="bg-gradient-to-r from-gray-700 to-gray-600 text-white text-left sticky top-0 z-10">
+                      <th className="px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold whitespace-nowrap w-8 sm:w-10">
                         <input
                           type="checkbox"
                           checked={
@@ -515,12 +530,12 @@ const handleGuardarSolicitudHoja = async () => {
                             excelData[activeSheet].data.every((row) => selectedRows.includes(row.id))
                           }
                           onChange={handleToggleAll}
-                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500 cursor-pointer"
                         />
                       </th>
-                      <th className="px-4 py-3 text-sm font-semibold whitespace-nowrap">Acciones</th>
+                      <th className="px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold whitespace-nowrap w-10 sm:w-12"></th>
                       {excelData[activeSheet].headers.map((header, idx) => (
-                        <th key={idx} className="px-4 py-3 text-sm font-semibold whitespace-nowrap">
+                        <th key={idx} className="px-2 sm:px-3 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold whitespace-nowrap max-w-[120px] sm:max-w-none truncate" title={header}>
                           {header}
                         </th>
                       ))}
@@ -528,19 +543,19 @@ const handleGuardarSolicitudHoja = async () => {
                   </thead>
                   <tbody>
                     {excelData[activeSheet].data.map((row) => (
-                      <tr key={row.id} className={`border-b hover:bg-gray-50 ${selectedRows.includes(row.id) ? 'bg-blue-50' : ''}`}>
-                        <td className="px-4 py-2">
+                      <tr key={row.id} className={`border-b hover:bg-gray-50 ${selectedRows.includes(row.id) ? 'bg-orange-50' : ''}`}>
+                        <td className="px-2 sm:px-3 py-1.5 sm:py-2">
                           <input
                             type="checkbox"
                             checked={selectedRows.includes(row.id)}
                             onChange={() => handleToggleRow(row.id)}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                            className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500 cursor-pointer"
                           />
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-2 sm:px-3 py-1.5 sm:py-2">
                           <button
                             onClick={() => handleEliminarFila(activeSheet, row.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                            className="p-1 sm:p-1.5 text-red-600 hover:bg-red-50 rounded"
                             title="Eliminar fila"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -549,12 +564,12 @@ const handleGuardarSolicitudHoja = async () => {
                           </button>
                         </td>
                         {excelData[activeSheet].columnKeys.map((key, idx) => (
-                          <td key={idx} className="px-4 py-2">
+                          <td key={idx} className="px-2 sm:px-3 py-1.5 sm:py-2">
                             <input
                               type="text"
                               value={row[key] || ''}
                               onChange={(e) => handleCellEditSheet(activeSheet, row.id, key, e.target.value)}
-                              className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500"
+                              className="w-full min-w-[80px] text-[11px] sm:text-xs border border-gray-200 rounded px-1.5 sm:px-2 py-1 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                             />
                           </td>
                         ))}
@@ -565,24 +580,59 @@ const handleGuardarSolicitudHoja = async () => {
               </div>
             </div>
 
-            <div className="flex justify-between gap-3">
-              <button onClick={handleResetear} disabled={guardando} className="px-5 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                Cargar otro archivo
+            {/* Botones de acción - simétricos y responsive */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+              {/* Botón secundario - Cargar otro */}
+              <button
+                onClick={handleResetear}
+                disabled={guardando}
+                className="order-last sm:order-first w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-2 border border-gray-300 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                <span className="hidden sm:inline">Cargar otro archivo</span>
+                <span className="sm:hidden">Nuevo archivo</span>
               </button>
-              <div className="flex gap-3">
+
+              {/* Contenedor de botones principales */}
+              <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+                {/* Guardar hoja */}
                 <button
                   onClick={handleGuardarSolicitudHoja}
                   disabled={savedSheets[activeSheet]?.saved || guardando}
-                  className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[200px]"
+                  className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
                 >
                   {guardando ? (
                     <>
                       <InlineSpinner size="sm" />
-                      Guardando...
+                      <span className="hidden sm:inline">Guardando...</span>
+                      <span className="sm:hidden">...</span>
                     </>
-                  ) : savedSheets[activeSheet]?.saved ? 'Hoja guardada ✓' : 'Guardar solicitud de esta hoja'}
+                  ) : savedSheets[activeSheet]?.saved ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="hidden sm:inline">Hoja guardada</span>
+                      <span className="sm:hidden">Guardada</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                      </svg>
+                      <span className="hidden sm:inline">Guardar solicitud</span>
+                      <span className="sm:hidden">Guardar</span>
+                    </>
+                  )}
                 </button>
-                <button onClick={handleFinalizar} className="px-5 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-semibold hover:from-green-600 hover:to-green-700">
+
+                {/* Finalizar */}
+                <button
+                  onClick={handleFinalizar}
+                  className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:from-green-600 hover:to-green-700 flex items-center justify-center gap-2 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                   Finalizar
                 </button>
               </div>
