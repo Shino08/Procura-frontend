@@ -18,7 +18,7 @@ export const Modal = ({ open, title, subtitle, onClose, children, footer }) => {
       aria-modal="true"
     >
       <div
-        className="w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl modal-content-in flex flex-col"
+        className="w-full max-w-4xl h-[95vh] sm:h-[600px] overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl modal-content-in flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

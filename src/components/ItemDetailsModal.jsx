@@ -36,6 +36,7 @@ export const ItemDetailsModal = ({
   const [uploading, setUploading] = useState(false);
 
   const [approvingQuote, setApprovingQuote] = useState(false);
+  const [cancellingQuote, setCancellingQuote] = useState(false);
 
   // Estados para modales de confirmación
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
@@ -75,9 +76,53 @@ export const ItemDetailsModal = ({
   const isAdmin = roleNormalized === "administrador";
   const isUser = roleNormalized === "procura" || roleNormalized === "usuario";
 
-  // Detectar si el ítem ya está aprobado
+  // Detectar estados del ítem para lógica de flujo secuencial
   const itemEstadoNombre = item?.estado?.nombre || item?.estado || "";
   const isApproved = itemEstadoNombre.toLowerCase() === "aprobado";
+  const isEnRevision = itemEstadoNombre.toLowerCase() === "en revisión";
+  const isCancelado = itemEstadoNombre.toLowerCase() === "cancelado";
+  const isEnCompra = itemEstadoNombre.toLowerCase() === "en compra";
+  const isRecibido = itemEstadoNombre.toLowerCase() === "recibido";
+
+  // El usuario solo puede aprobar/cancelar cuando está en "En Revisión"
+  const canUserAct = isUser && isEnRevision;
+  // Una vez aprobado, no puede cancelar
+  const cannotCancel = isApproved || isEnCompra || isRecibido || isCancelado;
+
+  // Secuencia de estados válida
+  const ESTADO_SEQUENCE = ["Pendiente", "En Revisión", "Aprobado", "En Compra", "Recibido"];
+
+  // Obtener siguiente estado válido para admin
+  const getNextValidStates = (currentEstado) => {
+    const currentIndex = ESTADO_SEQUENCE.findIndex(
+      (e) => e.toLowerCase() === (currentEstado || "").toLowerCase()
+    );
+
+    // Si el item está aprobado, admin puede pasar a "En Compra"
+    if (currentEstado?.toLowerCase() === "aprobado") {
+      return estados.filter((e) => e.nombre?.toLowerCase() === "en compra");
+    }
+
+    // Si está en compra, puede pasar a "Recibido"
+    if (currentEstado?.toLowerCase() === "en compra") {
+      return estados.filter((e) => e.nombre?.toLowerCase() === "recibido");
+    }
+
+    // Si está pendiente, solo puede pasar a "En Revisión"
+    if (currentEstado?.toLowerCase() === "pendiente") {
+      return estados.filter((e) => e.nombre?.toLowerCase() === "en revisión");
+    }
+
+    // En Revisión: no puede cambiar (espera al usuario)
+    if (currentEstado?.toLowerCase() === "en revisión") {
+      return [];
+    }
+
+    // Estado final o cancelado: no hay siguiente
+    return [];
+  };
+
+  const validNextStates = getNextValidStates(itemEstadoNombre);
 
   // Scroll automático al final del chat
   useEffect(() => {
@@ -336,6 +381,41 @@ export const ItemDetailsModal = ({
     }
   };
 
+  // Cancelar solicitud (solo usuario, solo en "En Revisión")
+  const handleCancelarSolicitud = async () => {
+    if (!isUser || !isEnRevision) return;
+
+    setCancellingQuote(true);
+    setErrorSave("");
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${API_URL}/estados/${item.id}/cancelar`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || "Error al cancelar solicitud");
+      }
+
+      onItemUpdated?.();
+
+      setTimeout(() => {
+        onClose();
+      }, 300);
+    } catch (e) {
+      setErrorSave(e.message || "Error inesperado");
+    } finally {
+      setCancellingQuote(false);
+    }
+  };
+
   const uploadAdjuntos = async ({ files, descripcion }) => {
     if (!isAdmin) return;
     if (!item?.id) return;
@@ -449,16 +529,6 @@ export const ItemDetailsModal = ({
         onClose={onClose}
         footer={
           <div className="flex flex-col gap-2 sm:gap-3">
-            {/* Indicador de estado aprobado */}
-            {isUser && isApproved && (
-              <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 border border-green-200 px-3 sm:px-4 py-2 sm:py-3">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-xs sm:text-sm font-semibold text-green-700">Este renglón ya ha sido aprobado</span>
-              </div>
-            )}
-
             {/* Botones de acción - stack en móvil, row en desktop */}
             <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
               {/* Botón cerrar */}
@@ -483,42 +553,104 @@ export const ItemDetailsModal = ({
                 </button>
               )}
 
-              {/* Botón aprobar cotización (usuario) */}
+              {/* Botones usuario: Aprobar/Cancelar solo en "En Revisión" */}
               {isUser && (
-                <button
-                  onClick={handleAprobarCotizacion}
-                  disabled={approvingQuote || isApproved}
-                  className={`w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${isApproved
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-sm hover:shadow-md disabled:opacity-50"
-                    }`}
-                >
-                  {isApproved ? (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <>
+                  {/* Mensaje cuando ya está aprobado */}
+                  {isApproved && (
+                    <div className="flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-3 py-2">
+                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="hidden sm:inline">Ya aprobado</span>
-                      <span className="sm:hidden">Aprobado</span>
-                    </>
-                  ) : approvingQuote ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <span className="text-xs font-semibold text-green-700">Aprobado</span>
+                    </div>
+                  )}
+
+                  {/* Mensaje cuando está cancelado */}
+                  {isCancelado && (
+                    <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-3 py-2">
+                      <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
-                      <span>...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <span className="text-xs font-semibold text-red-700">Cancelado</span>
+                    </div>
+                  )}
+
+                  {/* Mensaje cuando está en proceso (En Compra/Recibido) */}
+                  {(isEnCompra || isRecibido) && (
+                    <div className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-3 py-2">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="hidden sm:inline">Aprobar cotización</span>
-                      <span className="sm:hidden">Aprobar</span>
+                      <span className="text-xs font-semibold text-blue-700">{itemEstadoNombre}</span>
+                    </div>
+                  )}
+
+                  {/* Mensaje cuando está pendiente (esperando revisión del admin) */}
+                  {itemEstadoNombre.toLowerCase() === "pendiente" && (
+                    <div className="flex items-center gap-2 rounded-xl bg-yellow-50 border border-yellow-200 px-3 py-2">
+                      <svg className="w-4 h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-xs font-semibold text-yellow-700">Esperando revisión</span>
+                    </div>
+                  )}
+
+                  {/* Botones Aprobar/Cancelar solo en "En Revisión" */}
+                  {canUserAct && (
+                    <>
+                      {/* Botón Cancelar */}
+                      <button
+                        onClick={handleCancelarSolicitud}
+                        disabled={cancellingQuote}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:from-red-600 hover:to-red-700 disabled:opacity-50 shadow-sm hover:shadow-md transition-all duration-200"
+                      >
+                        {cancellingQuote ? (
+                          <>
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span className="hidden sm:inline">Cancelar solicitud</span>
+                            <span className="sm:hidden">Cancelar</span>
+                          </>
+                        )}
+                      </button>
+
+                      {/* Botón Aprobar */}
+                      <button
+                        onClick={handleAprobarCotizacion}
+                        disabled={approvingQuote}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:from-green-600 hover:to-green-700 disabled:opacity-50 shadow-sm hover:shadow-md transition-all duration-200"
+                      >
+                        {approvingQuote ? (
+                          <>
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="hidden sm:inline">Aprobar cotización</span>
+                            <span className="sm:hidden">Aprobar</span>
+                          </>
+                        )}
+                      </button>
                     </>
                   )}
-                </button>
+                </>
               )}
 
               {/* Botón guardar cambios (admin) */}
@@ -697,6 +829,19 @@ export const ItemDetailsModal = ({
                     <InlineSpinner size="sm" />
                     <p className="text-xs text-gray-500">Cargando estados...</p>
                   </div>
+                ) : validNextStates.length === 0 ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xs text-gray-600">
+                      {isEnRevision
+                        ? "Esperando que el usuario apruebe o cancele"
+                        : isRecibido || isCancelado
+                          ? "Estado final alcanzado"
+                          : "No hay transiciones disponibles"}
+                    </p>
+                  </div>
                 ) : (
                   <select
                     value={selectedEstadoId || ""}
@@ -704,7 +849,7 @@ export const ItemDetailsModal = ({
                     className="w-full rounded-xl border border-blue-300 bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   >
                     <option value="">-- Selecciona estado --</option>
-                    {estados.map((e) => (
+                    {validNextStates.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.nombre}
                       </option>

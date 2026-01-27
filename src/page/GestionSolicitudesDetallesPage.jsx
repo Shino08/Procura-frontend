@@ -63,6 +63,10 @@ export const GestionSolicitudesDetallesPage = () => {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [userName, setUserName] = useState("");
 
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
+
   const originalRef = useRef(null);
 
   // Obtener userName del localStorage
@@ -198,6 +202,18 @@ export const GestionSolicitudesDetallesPage = () => {
 
     return { filteredRows, stats };
   }, [rows, searchTerm, statusFilter]);
+
+  // Paginación calculada
+  const totalPages = Math.ceil(filteredRows.length / ITEMS_PER_PAGE);
+  const paginatedRows = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredRows.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredRows, currentPage, ITEMS_PER_PAGE]);
+
+  // Reset página cuando cambian filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, solicitudActivaId]);
 
   const hayCambios = useMemo(() => {
     if (!originalRef.current) return false;
@@ -507,7 +523,7 @@ export const GestionSolicitudesDetallesPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRows.map((r, idx) => {
+                    {paginatedRows.map((r, idx) => {
                       const status = getStatusCfg(r.estado);
                       return (
                         <tr
@@ -577,17 +593,75 @@ export const GestionSolicitudesDetallesPage = () => {
                 </table>
               </div>
 
-              {/* Footer */}
-              <div className="flex items-center justify-between px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-100">
-                <p className="text-xs text-gray-500">
-                  Total: <span className="font-semibold text-gray-700">{filteredRows.length}</span> ítems
-                </p>
-                <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <span className="hidden sm:inline">Cantidad total:</span>
-                  <span className="font-bold text-purple-600">
-                    {filteredRows.reduce((sum, r) => sum + (parseFloat(r.cantidadTotal) || 0), 0).toLocaleString()}
-                  </span>
+              {/* Footer con paginación */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-100">
+                {/* Info del total */}
+                <div className="flex items-center gap-4">
+                  <p className="text-xs text-gray-500">
+                    Mostrando <span className="font-semibold text-gray-700">{paginatedRows.length}</span> de <span className="font-semibold text-gray-700">{filteredRows.length}</span> ítems
+                  </p>
+                  <div className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">
+                    <span>Cantidad total:</span>
+                    <span className="font-bold text-purple-600">
+                      {filteredRows.reduce((sum, r) => sum + (parseFloat(r.cantidadTotal) || 0), 0).toLocaleString()}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Controles de paginación */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    {/* Botón Anterior */}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Números de página */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${currentPage === pageNum
+                                ? "bg-orange-500 text-white shadow-sm"
+                                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                              }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Botón Siguiente */}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
