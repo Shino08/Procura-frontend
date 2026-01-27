@@ -446,7 +446,7 @@ export const GestionSolicitudesDetallesPage = () => {
         </div>
 
         {/* Solicitud Selector */}
-        {solicitudes.length > 1 && (
+        {solicitudes.length > 0 && (
           <div className="mb-4 sm:mb-6 bg-white rounded-lg shadow-sm p-4 sm:p-5">
             <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
               Solicitud / Hoja
@@ -640,8 +640,8 @@ export const GestionSolicitudesDetallesPage = () => {
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
                             className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${currentPage === pageNum
-                                ? "bg-orange-500 text-white shadow-sm"
-                                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                              ? "bg-orange-500 text-white shadow-sm"
+                              : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                               }`}
                           >
                             {pageNum}
