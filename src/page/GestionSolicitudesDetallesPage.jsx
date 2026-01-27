@@ -188,10 +188,12 @@ export const GestionSolicitudesDetallesPage = () => {
 
     const stats = {
       total: rows.length,
+      pendientes: rows.filter((r) => r.estado === "Pendiente").length,
+      enRevision: rows.filter((r) => r.estado === "En Revisión").length,
       aprobados: rows.filter((r) => r.estado === "Aprobado").length,
-      pendientes: rows.filter((r) => r.estado === "Pendiente" || r.estado === "En Revisión").length,
-      enProceso: rows.filter((r) => r.estado === "En Proceso").length,
-      rechazados: rows.filter((r) => r.estado === "Rechazado").length,
+      enCompra: rows.filter((r) => r.estado === "En Compra").length,
+      recibidos: rows.filter((r) => r.estado === "Recibido").length,
+      cancelados: rows.filter((r) => r.estado === "Cancelado").length,
     };
 
     return { filteredRows, stats };
@@ -323,17 +325,21 @@ export const GestionSolicitudesDetallesPage = () => {
 
   const statsCards = [
     { label: "Total Ítems", value: stats.total, color: "orange", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+    { label: "Pendientes", value: stats.pendientes, color: "yellow", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+    { label: "En Revisión", value: stats.enRevision, color: "blue", icon: "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" },
     { label: "Aprobados", value: stats.aprobados, color: "green", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-    { label: "Pendientes", value: stats.pendientes, color: "blue", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
-    { label: "En Proceso", value: stats.enProceso, color: "purple", icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" },
-    { label: "Rechazados", value: stats.rechazados, color: "red", icon: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" },
+    { label: "En Compra", value: stats.enCompra, color: "purple", icon: "M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" },
+    { label: "Recibidos", value: stats.recibidos, color: "emerald", icon: "M5 13l4 4L19 7" },
+    { label: "Cancelados", value: stats.cancelados, color: "red", icon: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" },
   ];
 
   const colorClasses = {
     orange: "bg-orange-50 text-orange-500",
+    yellow: "bg-yellow-50 text-yellow-500",
     green: "bg-green-50 text-green-500",
     blue: "bg-blue-50 text-blue-500",
     purple: "bg-purple-50 text-purple-500",
+    emerald: "bg-emerald-50 text-emerald-500",
     red: "bg-red-50 text-red-500",
   };
 
@@ -443,68 +449,145 @@ export const GestionSolicitudesDetallesPage = () => {
           </div>
         )}
 
-        {/* Items Table */}
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-4 sm:p-6 border-b border-gray-200">
-            <h2 className="text-base sm:text-lg font-bold text-gray-900">Ítems de la Solicitud</h2>
-            <p className="text-xs sm:text-sm text-gray-600">{filteredRows.length} ítem{filteredRows.length !== 1 ? 's' : ''} encontrado{filteredRows.length !== 1 ? 's' : ''}</p>
+        {/* Items Table - Premium Design */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl text-white shadow-lg">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-gray-900">Ítems de la Solicitud</h2>
+                <p className="text-xs text-gray-500">{filteredRows.length} ítem{filteredRows.length !== 1 ? 's' : ''} encontrado{filteredRows.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Click en fila para detalles
+            </div>
           </div>
 
           {filteredRows.length === 0 ? (
-            <div className="p-8 sm:p-10 text-center text-xs sm:text-sm text-gray-600">
-              No se encontraron ítems con los filtros aplicados.
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-600">No se encontraron ítems</p>
+              <p className="text-xs text-gray-400 mt-1">Intenta ajustar los filtros aplicados</p>
             </div>
           ) : (
             <>
               {/* Mobile hint */}
-              <div className="block sm:hidden px-4 py-2 bg-gray-50 border-b border-gray-200 text-[10px] text-gray-500 text-center">
-                ← Desliza para ver más columnas →
+              <div className="flex sm:hidden items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100 text-xs text-orange-600">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                Desliza para ver más columnas
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px]">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-600 uppercase">#</th>
-                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-600 uppercase">CÓDIGO</th>
-                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-600 uppercase">DESCRIPCIÓN</th>
-                      <th className="text-right py-2 sm:py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-600 uppercase">CANT</th>
-                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-600 uppercase">UND</th>
-                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-600 uppercase">ESTADO</th>
-                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-600 uppercase">OBS</th>
+                <table className="w-full min-w-[750px]">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-gray-50 via-gray-100/50 to-gray-50 border-b border-gray-200">
+                      <th className="text-left py-3 sm:py-4 px-3 sm:px-5 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">#</th>
+                      <th className="text-left py-3 sm:py-4 px-3 sm:px-5 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Código</th>
+                      <th className="text-left py-3 sm:py-4 px-3 sm:px-5 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Descripción</th>
+                      <th className="text-center py-3 sm:py-4 px-3 sm:px-5 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Cantidad</th>
+                      <th className="text-center py-3 sm:py-4 px-3 sm:px-5 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Unidad</th>
+                      <th className="text-center py-3 sm:py-4 px-3 sm:px-5 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+                      <th className="text-left py-3 sm:py-4 px-3 sm:px-5 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Observación</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredRows.map((r) => {
+                  <tbody>
+                    {filteredRows.map((r, idx) => {
                       const status = getStatusCfg(r.estado);
                       return (
                         <tr
                           key={r.id}
-                          className="hover:bg-gray-50 cursor-pointer"
+                          className={`group cursor-pointer transition-all duration-150 hover:bg-orange-50/60 hover:shadow-sm ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'} ${idx === 0 ? 'bg-orange-50/40' : ''}`}
                           onClick={() => openItem(r)}
                         >
-                          <td className="py-3 sm:py-4 px-3 sm:px-4 text-xs sm:text-sm text-gray-900 font-medium">{r.linea}</td>
-                          <td className="py-3 sm:py-4 px-3 sm:px-4 text-[10px] sm:text-sm font-mono text-gray-700">{r.codigo}</td>
-                          <td className="py-3 sm:py-4 px-3 sm:px-4 text-xs sm:text-sm text-gray-800 max-w-[150px] sm:max-w-md truncate" title={r.descripcion}>
-                            {r.descripcion}
-                          </td>
-                          <td className="py-3 sm:py-4 px-3 sm:px-4 text-xs sm:text-sm text-gray-900 text-right font-semibold">{r.cantidadTotal}</td>
-                          <td className="py-3 sm:py-4 px-3 sm:px-4 text-[10px] sm:text-sm text-gray-600">{r.unidad}</td>
-                          <td className="py-3 sm:py-4 px-3 sm:px-4">
-                            <span className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold ${status.bg} ${status.text}`}>
-                              <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${status.dot}`} />
-                              <span className="hidden sm:inline">{r.estado}</span>
-                              <span className="sm:hidden">{r.estado.substring(0, 3)}</span>
+                          {/* Línea */}
+                          <td className="py-3.5 sm:py-4 px-3 sm:px-5">
+                            <span className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gray-100 text-xs sm:text-sm font-bold text-gray-700 group-hover:bg-orange-100 group-hover:text-orange-700 transition-colors">
+                              {r.linea}
                             </span>
                           </td>
-                          <td className="py-3 sm:py-4 px-3 sm:px-4 text-[10px] sm:text-sm text-gray-600 max-w-[100px] sm:max-w-xs truncate">
-                            {r.ultimaObservacion || r.observacion || "-"}
+
+                          {/* Código */}
+                          <td className="py-3.5 sm:py-4 px-3 sm:px-5">
+                            <span className="inline-flex px-2.5 py-1 rounded-md bg-slate-100 text-[10px] sm:text-xs font-mono font-semibold text-slate-700 group-hover:bg-slate-200 transition-colors">
+                              {r.codigo}
+                            </span>
+                          </td>
+
+                          {/* Descripción */}
+                          <td className="py-3.5 sm:py-4 px-3 sm:px-5 max-w-[180px] sm:max-w-sm">
+                            <p className="text-xs sm:text-sm font-medium text-gray-800 truncate group-hover:text-gray-900" title={r.descripcion}>
+                              {r.descripcion}
+                            </p>
+                          </td>
+
+                          {/* Cantidad */}
+                          <td className="py-3.5 sm:py-4 px-3 sm:px-5 text-center">
+                            <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2.5 py-1 rounded-full bg-purple-100 text-xs sm:text-sm font-bold text-purple-700">
+                              {r.cantidadTotal}
+                            </span>
+                          </td>
+
+                          {/* Unidad */}
+                          <td className="py-3.5 sm:py-4 px-3 sm:px-5 text-center">
+                            <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase">
+                              {r.unidad}
+                            </span>
+                          </td>
+
+                          {/* Estado */}
+                          <td className="py-3.5 sm:py-4 px-3 sm:px-5 text-center">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold border ${status.bg} ${status.text} border-current/20`}>
+                              <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${status.dot}`} />
+                              <span className="hidden sm:inline">{r.estado}</span>
+                              <span className="sm:hidden">{r.estado.substring(0, 4)}</span>
+                            </span>
+                          </td>
+
+                          {/* Observación */}
+                          <td className="py-3.5 sm:py-4 px-3 sm:px-5">
+                            <div className="flex items-center gap-2 max-w-[120px] sm:max-w-xs">
+                              <p className="text-[10px] sm:text-xs text-gray-500 truncate flex-1" title={r.ultimaObservacion || r.observacion}>
+                                {r.ultimaObservacion || r.observacion || "—"}
+                              </p>
+                              <svg className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-100">
+                <p className="text-xs text-gray-500">
+                  Total: <span className="font-semibold text-gray-700">{filteredRows.length}</span> ítems
+                </p>
+                <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <span className="hidden sm:inline">Cantidad total:</span>
+                  <span className="font-bold text-purple-600">
+                    {filteredRows.reduce((sum, r) => sum + (parseFloat(r.cantidadTotal) || 0), 0).toLocaleString()}
+                  </span>
+                </div>
               </div>
             </>
           )}
