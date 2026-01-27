@@ -125,7 +125,11 @@ export const AdminDashboard = ({ token, userName }) => {
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
 
-      <DashboardHeader userName={userName} />
+      <DashboardHeader 
+      userName={userName}
+      notificacionesNoLeidas={notificacionesNoLeidas}
+      onOpenNotificaciones={() => setNotificacionesOpen(true)} 
+      />
 
       {/* Breadcrumb */}
       <Breadcrumb
