@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { InlineSpinner } from "./LoadingSpinner";
+import { API_URL } from "../services";
 
 const formatFecha = (iso) =>
   new Date(iso).toLocaleDateString("es-ES", {
@@ -37,7 +38,7 @@ const getEstadoConfig = (estado) => {
 export const SolicitudesRecientes = ({
   token,
   title = "Mis Solicitudes Recientes",
-  endpoint = "http://localhost:3000/api/archivos",
+  endpoint = `${API_URL}/archivos`,
   verTodasLink = "/solicitudes/admin",
   detalleBasePath = "/solicitudes/admin",
   limit = 5,
@@ -89,7 +90,7 @@ export const SolicitudesRecientes = ({
       {/* Header */}
       <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 sm:px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl text-white shadow-md">
+          <div className="p-2 bg-orange-500 rounded-xl text-white shadow-md">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
@@ -217,7 +218,7 @@ export const SolicitudesRecientes = ({
                     <td className="px-6 py-4 text-right">
                       <Link
                         to={detallePath}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all"
                       >
                         Ver
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
