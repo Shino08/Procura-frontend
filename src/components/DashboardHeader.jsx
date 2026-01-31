@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import logoImage from "../assets/logo20.png";
 
 // Función para convertir email a nombre legible
@@ -49,6 +49,19 @@ export const DashboardHeader = ({
     navigate("/", { replace: true });
   };
 
+  const { tipo } = useParams(); // [web:387]
+
+const headerConfig = useMemo(() => {
+  const map = {
+    admin:  { title: "Dashboard Admin",  backTo: "/dashboard/admin" },
+    gestion:{ title: "Dashboard Gestión", backTo: "/dashboard/gestion" },
+    user:   { title: "Dashboard Usuario", backTo: "/dashboard/user" },
+  };
+
+  return map[tipo] || { title: "Dashboard", backTo: "/dashboard/user" };
+}, [tipo]);
+
+
   return (
     <>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -57,9 +70,9 @@ export const DashboardHeader = ({
             {/* Left Section - Logo + Optional Back Button + Title */}
             <div className="flex items-center gap-4">
               {/* Back Button (optional) */}
-              {showBackButton && (
+              {headerConfig.title && (
                 <button
-                  onClick={() => backTo ? navigate(backTo) : navigate(-1)}
+                  onClick={() => headerConfig.backTo ? navigate(headerConfig.backTo) : navigate(-1)}
                   className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
                   aria-label="Volver"
                 >
