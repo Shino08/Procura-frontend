@@ -21,38 +21,54 @@ export const UsuarioDashboard = ({ token, userName }) => {
     rendimiento: 0
   });
   const [loadingStats, setLoadingStats] = useState(true);
-  const userId = localStorage.getItem("userId");
-  const userRole = localStorage.getItem("userRol");
+
+  // ✅ FORZAR valores de usuario al cargar (solo una vez)
+  useEffect(() => {
+    localStorage.setItem("userId", "2");
+    localStorage.setItem("userRol", "Usuario");
+    console.log("🔧 ClientDashboard: Forzando valores de usuario");
+  }, []); // Solo al montar
+
+  // ✅ Leer desde localStorage (con fallback a usuario)
+  const userId = localStorage.getItem("userId") || "2";
+  const userRole = localStorage.getItem("userRol") || "Usuario";
+
+  console.log("📊 ClientDashboard usando:", { userId, userRole });
 
   // Cargar estadísticas del usuario
   useEffect(() => {
-    const uid = localStorage.getItem("userId");
-    const role = localStorage.getItem("userRol");
+    const uid = userId;
+    const role = userRole;
 
     const fetchStats = async () => {
       try {
         const res = await fetch(`${API_URL}/archivos/usuario`, {
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": uid || "",
-          "x-user-role": role || "Usuario",
-        },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid,
+            "x-user-role": role,
+          },
         });
 
         if (res.ok) {
           const data = await res.json();
           const archivos = Array.isArray(data?.archivos) ? data.archivos : [];
 
-          const activas = archivos.filter(a => a.estado !== "Completada" && a.estado !== "Rechazada").length;
-          const completadas = archivos.filter(a => a.estado === "Completada").length;
+          const activas = archivos.filter(
+            (a) => a.estado !== "Completada" && a.estado !== "Rechazada"
+          ).length;
+          const completadas = archivos.filter(
+            (a) => a.estado === "Completada"
+          ).length;
           const total = archivos.length;
-          const rendimiento = total > 0 ? Math.round((completadas / total) * 100) : 0;
+          const rendimiento =
+            total > 0 ? Math.round((completadas / total) * 100) : 0;
 
           setStats({
             solicitudesActivas: activas,
             solicitudesCompletadas: completadas,
             totalPresupuesto: 0,
-            rendimiento
+            rendimiento,
           });
         }
       } catch (error) {
@@ -63,7 +79,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
     };
 
     fetchStats();
-  }, []);
+  }, [userId, userRole]); // ✅ Agregar dependencias
 
   const quickActions = useMemo(
     () => [
@@ -72,14 +88,14 @@ export const UsuarioDashboard = ({ token, userName }) => {
         description: "Crear solicitud de compra",
         link: "/solicitudes/nueva",
         primary: true,
-        icon: "M12 4v16m8-8H4"
+        icon: "M12 4v16m8-8H4",
       },
       {
         title: "Mis Solicitudes",
         description: "Ver historial completo",
         link: "/solicitudes/usuario",
         primary: false,
-        icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
       },
     ],
     []
@@ -90,6 +106,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("userCorreo");
     localStorage.removeItem("userRol");
+    localStorage.removeItem("userId"); // ✅ Limpiar userId también
     navigate("/login");
   };
 
@@ -97,10 +114,11 @@ export const UsuarioDashboard = ({ token, userName }) => {
     {
       title: "Solicitudes Activas",
       value: stats.solicitudesActivas,
-      iconPath: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+      iconPath:
+        "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
       color: "orange",
       bgGradient: "from-orange-500 to-orange-600",
-      subtitle: "En proceso"
+      subtitle: "En proceso",
     },
     {
       title: "Completadas",
@@ -108,7 +126,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
       iconPath: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
       color: "green",
       bgGradient: "from-green-500 to-green-600",
-      subtitle: "Este mes"
+      subtitle: "Este mes",
     },
     {
       title: "Rendimiento",
@@ -116,15 +134,16 @@ export const UsuarioDashboard = ({ token, userName }) => {
       iconPath: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6",
       color: "purple",
       bgGradient: "from-purple-500 to-purple-600",
-      subtitle: "Tasa de aprobación"
+      subtitle: "Tasa de aprobación",
     },
     {
       title: "Total Solicitudes",
       value: stats.solicitudesActivas + stats.solicitudesCompletadas,
-      iconPath: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
+      iconPath:
+        "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
       color: "blue",
       bgGradient: "from-blue-500 to-blue-600",
-      subtitle: "Historial completo"
+      subtitle: "Historial completo",
     },
   ];
 
@@ -149,7 +168,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
       <Breadcrumb
         items={[
           { label: "Home", to: "/dashboard/client" },
-          { label: "Mi Panel", active: true }
+          { label: "Mi Panel", active: true },
         ]}
       />
 
@@ -157,9 +176,15 @@ export const UsuarioDashboard = ({ token, userName }) => {
       <main className="container mx-auto px-4 sm:px-6 pb-8 sm:pb-12">
         {/* Welcome Section */}
         <div className="mb-4 sm:mb-6">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">¡Hola, {userName}!</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+            ¡Hola {userName}!
+          </h2>
           <p className="mt-1 text-xs sm:text-sm text-gray-600">
             Administra tus solicitudes y haz seguimiento.
+          </p>
+          {/* ✅ Mostrar valores actuales (para debug) */}
+          <p className="mt-2 text-xs text-green-600">
+            👤 ID: {userId} | Rol: {userRole}
           </p>
         </div>
 
@@ -176,7 +201,9 @@ export const UsuarioDashboard = ({ token, userName }) => {
               <div className="p-3 sm:p-5">
                 <div className="flex justify-between items-start mb-2 sm:mb-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-gray-500 text-[10px] sm:text-xs font-medium mb-1 truncate">{stat.title}</p>
+                    <p className="text-gray-500 text-[10px] sm:text-xs font-medium mb-1 truncate">
+                      {stat.title}
+                    </p>
                     <p className="text-xl sm:text-3xl font-bold text-gray-900 transition-colors group-hover:text-gray-700">
                       {loadingStats ? (
                         <span className="inline-block w-12 sm:w-16 h-6 sm:h-8 bg-gray-200 animate-pulse rounded" />
@@ -184,9 +211,13 @@ export const UsuarioDashboard = ({ token, userName }) => {
                         stat.value
                       )}
                     </p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 mt-1 truncate">{stat.subtitle}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-1 truncate">
+                      {stat.subtitle}
+                    </p>
                   </div>
-                  <div className={`${colorClasses[stat.color].bg} p-1.5 sm:p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 flex-shrink-0 ml-2`}>
+                  <div
+                    className={`${colorClasses[stat.color].bg} p-1.5 sm:p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 flex-shrink-0 ml-2`}
+                  >
                     <svg
                       className={`w-4 h-4 sm:w-5 sm:h-5 ${colorClasses[stat.color].text}`}
                       fill="none"
@@ -217,31 +248,49 @@ export const UsuarioDashboard = ({ token, userName }) => {
               </div>
 
               {/* Efecto de brillo en hover */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none`} />
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none`}
+              />
             </div>
           ))}
         </div>
 
         {/* Quick Actions con menos padding */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Acciones Rápidas</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
+            Acciones Rápidas
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
             {quickActions.map((action) => (
               <Link
                 key={action.link}
                 to={action.link}
-                className={`group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${action.primary ? 'ring-2 ring-orange-500 ring-opacity-50' : ''
-                  }`}
+                className={`group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden ${
+                  action.primary ? "ring-2 ring-orange-500 ring-opacity-50" : ""
+                }`}
               >
                 <div className="p-4 sm:p-5">
                   {/* Icono y badge */}
                   <div className="flex items-start justify-between mb-2 sm:mb-3">
-                    <div className={`p-2 sm:p-2.5 rounded-xl ${action.primary
-                        ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white'
-                        : 'bg-gray-100 text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600'
-                      } transition-colors`}>
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={action.icon} />
+                    <div
+                      className={`p-2 sm:p-2.5 rounded-xl ${
+                        action.primary
+                          ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white"
+                          : "bg-gray-100 text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600"
+                      } transition-colors`}
+                    >
+                      <svg
+                        className="w-5 h-5 sm:w-6 sm:h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d={action.icon}
+                        />
                       </svg>
                     </div>
                   </div>
@@ -255,8 +304,13 @@ export const UsuarioDashboard = ({ token, userName }) => {
                   </p>
 
                   {/* CTA */}
-                  <div className={`inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold ${action.primary ? 'text-orange-600' : 'text-gray-600 group-hover:text-blue-600'
-                    } transition-colors`}>
+                  <div
+                    className={`inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold ${
+                      action.primary
+                        ? "text-orange-600"
+                        : "text-gray-600 group-hover:text-blue-600"
+                    } transition-colors`}
+                  >
                     {action.primary ? "Comenzar ahora" : "Ir al módulo"}
                     <svg
                       className="w-3.5 h-3.5 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform"
@@ -264,16 +318,24 @@ export const UsuarioDashboard = ({ token, userName }) => {
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </div>
                 </div>
 
                 {/* Borde inferior con gradiente (solo en hover) */}
-                <div className={`h-1 bg-gradient-to-r ${action.primary
-                    ? 'from-orange-500 to-orange-600'
-                    : 'from-blue-500 to-blue-600'
-                  } transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left`} />
+                <div
+                  className={`h-1 bg-gradient-to-r ${
+                    action.primary
+                      ? "from-orange-500 to-orange-600"
+                      : "from-blue-500 to-blue-600"
+                  } transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left`}
+                />
               </Link>
             ))}
           </div>
@@ -294,7 +356,10 @@ export const UsuarioDashboard = ({ token, userName }) => {
       <footer className="bg-white border-t border-gray-200 mt-8 sm:mt-12">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex flex-col md:flex-row justify-center items-center gap-4 text-xs sm:text-sm text-gray-600 text-center">
-            <p>© 2026 Sistema Procura - Business & Development. Todos los derechos reservados.</p>
+            <p>
+              © 2026 Sistema Procura - Business & Development. Todos los
+              derechos reservados.
+            </p>
           </div>
         </div>
       </footer>
@@ -313,11 +378,23 @@ export const UsuarioDashboard = ({ token, userName }) => {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <svg
+                  className="w-8 h-8 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">¿Cerrar sesión?</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                ¿Cerrar sesión?
+              </h3>
               <p className="text-sm text-gray-600">
                 Tendrás que iniciar sesión nuevamente para acceder.
               </p>
@@ -327,8 +404,18 @@ export const UsuarioDashboard = ({ token, userName }) => {
                 onClick={() => setShowLogoutModal(false)}
                 className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 font-semibold text-gray-700 transition-colors inline-flex items-center justify-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
                 Cancelar
               </button>
@@ -336,8 +423,18 @@ export const UsuarioDashboard = ({ token, userName }) => {
                 onClick={confirmLogout}
                 className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 font-semibold text-white transition-colors inline-flex items-center justify-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
                 </svg>
                 Cerrar sesión
               </button>

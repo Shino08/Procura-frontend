@@ -61,8 +61,8 @@ export const SolicitudesRecientes = ({
         const res = await fetch(endpoint, {
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": userId || "",
-            "x-user-role": userRole || "Usuario",
+            "x-user-id": userId,
+            "x-user-role": userRole,
           },
           signal: controller.signal,
         });

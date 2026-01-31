@@ -80,13 +80,13 @@ export const GestionSolicitudesDetallesPage = () => {
     const controller = new AbortController();
     (async () => {
       try {
-        const uid = localStorage.getItem("userId");
-        const role = localStorage.getItem("userRol");
+        const uid = 1;
+        const role = "Administrador";
         const res = await fetch(`${API_URL}/estados`, {
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": uid || "",
-            "x-user-role": role || "Usuario",
+            "x-user-id": uid,
+            "x-user-role": role,
           },
           signal: controller.signal,
         });
@@ -101,13 +101,13 @@ export const GestionSolicitudesDetallesPage = () => {
   // Función para cargar/refrescar los datos
   const fetchDetails = async (signal) => {
     try {
-      const uid = localStorage.getItem("userId");
-      const role = localStorage.getItem("userRol");
+      const uid = 1;
+      const role = "Administrador";
       const res = await fetch(`${API_URL}/archivos/detalles/${id}`, {
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": uid || "",
-          "x-user-role": role || "Usuario",
+          "x-user-id": uid,
+          "x-user-role": role,
         },
         signal: signal,
       });

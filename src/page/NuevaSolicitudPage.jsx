@@ -170,9 +170,7 @@ export const NuevaSolicitudPage = () => {
     try {
       setGuardando(true);
 
-      const token = localStorage.getItem('token');
-      const userIdRaw = localStorage.getItem('userId') ?? localStorage.getItem('id');
-      const userId = Number(userIdRaw);
+      const userId = 2;
 
       if (!userId || Number.isNaN(userId)) {
         throw new Error('No hay userId válido en localStorage (userId/id).');
@@ -204,7 +202,8 @@ export const NuevaSolicitudPage = () => {
 
         res = await fetch(`${API_URL}/solicitudes`, {
           method: 'POST',
-          headers: { Authorization: token ? `Bearer ${token}` : '' },
+          headers: {"x-user-id": userId,
+          "x-user-role": "Usuario",},
           body: fd,
         });
       } else {
@@ -212,7 +211,8 @@ export const NuevaSolicitudPage = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: token ? `Bearer ${token}` : '',
+            "x-user-id": userId,
+            "x-user-role": "Usuario",
           },
           body: JSON.stringify(payload),
         });

@@ -257,22 +257,21 @@ export const ItemDetailsModal = ({
 
   // Guardar cambios (solo admin - solo estado)
   const handleGuardar = async () => {
-    if (!isAdmin) return;
 
     setSaving(true);
     setErrorSave("");
 
     try {
-      const uid = localStorage.getItem("userId");
-      const role = localStorage.getItem("userRol");
+      const uid = 1;
+      const role = "Administrador";
 
       if (selectedEstadoId && selectedEstadoId !== item.estado?.id) {
         const resEstado = await fetch(`${API_URL}/estados/${item.id}/`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": uid || "",
-            "x-user-role": role || "Usuario",
+            "x-user-id": uid,
+            "x-user-role": role,
           },
           body: JSON.stringify({ idEstado: selectedEstadoId }),
         });

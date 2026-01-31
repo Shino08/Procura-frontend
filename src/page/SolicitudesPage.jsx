@@ -39,13 +39,13 @@ export const SolicitudesPage = () => {
         setLoading(true);
         setError("");
 
-        const uid = localStorage.getItem("userId");
-        const role = localStorage.getItem("userRol");
+        const uid = 2;
+        const role = "Usuario";
         const res = await fetch(`${API_URL}/archivos/usuario`, {
           headers: {
             "Content-Type": "application/json",
-            "x-user-id": uid || "",
-            "x-user-role": role || "Usuario",
+            "x-user-id": uid,
+            "x-user-role": role,
           },
           signal: controller.signal,
         });
