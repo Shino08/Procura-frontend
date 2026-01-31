@@ -29,14 +29,11 @@ export const AdminDashboard = ({ token, userName }) => {
   useEffect(() => {
     localStorage.setItem("userId", "1");
     localStorage.setItem("userRol", "Administrador");
-    console.log("🔧 AdminDashboard: Forzando valores de admin");
   }, []); // Solo al montar
 
   // ✅ Leer desde localStorage (con fallback a admin)
   const userId = localStorage.getItem("userId") || "1";
   const userRole = localStorage.getItem("userRol") || "Administrador";
-
-  console.log("📊 AdminDashboard usando:", { userId, userRole });
 
   // Cargar estadísticas del admin
   useEffect(() => {

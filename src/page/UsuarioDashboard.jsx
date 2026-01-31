@@ -26,14 +26,11 @@ export const UsuarioDashboard = ({ token, userName }) => {
   useEffect(() => {
     localStorage.setItem("userId", "2");
     localStorage.setItem("userRol", "Usuario");
-    console.log("🔧 ClientDashboard: Forzando valores de usuario");
   }, []); // Solo al montar
 
   // ✅ Leer desde localStorage (con fallback a usuario)
   const userId = localStorage.getItem("userId") || "2";
   const userRole = localStorage.getItem("userRol") || "Usuario";
-
-  console.log("📊 ClientDashboard usando:", { userId, userRole });
 
   // Cargar estadísticas del usuario
   useEffect(() => {
