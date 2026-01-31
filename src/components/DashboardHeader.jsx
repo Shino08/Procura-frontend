@@ -48,7 +48,7 @@ export const DashboardHeader = ({
     localStorage.removeItem("userRol");
     
     // ✅ Redirigir al otro sistema (puerto 5173)
-    window.location.href = "https://hilarious-blancmange-f07b86.netlify.app/InicioPlanificador";
+    window.location.href = "https://proyecto.bdgestion.org/InicioPlanificador";
   };
 
   const { tipo } = useParams();
