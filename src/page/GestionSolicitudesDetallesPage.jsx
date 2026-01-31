@@ -80,9 +80,14 @@ export const GestionSolicitudesDetallesPage = () => {
     const controller = new AbortController();
     (async () => {
       try {
-        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
         const res = await fetch(`${API_URL}/estados`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
           signal: controller.signal,
         });
         if (!res.ok) return;
@@ -96,9 +101,14 @@ export const GestionSolicitudesDetallesPage = () => {
   // Función para cargar/refrescar los datos
   const fetchDetails = async (signal) => {
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
       const res = await fetch(`${API_URL}/archivos/detalles/${id}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
+        },
         signal: signal,
       });
 
@@ -281,7 +291,8 @@ export const GestionSolicitudesDetallesPage = () => {
         return;
       }
 
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
 
       await Promise.all(
         diffs.map((d) =>
@@ -289,7 +300,8 @@ export const GestionSolicitudesDetallesPage = () => {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
-              Authorization: token ? `Bearer ${token}` : "",
+              "x-user-id": uid || "",
+              "x-user-role": role || "Usuario",
             },
             body: JSON.stringify({
               estadoNombre: d.estadoNombre,
@@ -372,7 +384,7 @@ export const GestionSolicitudesDetallesPage = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Home", to: "/dashboard" },
+          { label: "Home", to: "/dashboard/admin" },
           { label: "Solicitudes", to: "/solicitudes/admin" },
           { label: `Detalle #${file?.id ?? id}`, active: true }
         ]}

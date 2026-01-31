@@ -2,15 +2,22 @@ import { useEffect, useState } from "react";
 import { API_URL } from "../services";
 import { InlineSpinner } from "./LoadingSpinner";
 
-export const EvolucionChart = ({ token }) => {
+export const EvolucionChart = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
+
         const res = await fetch(`${API_URL}/archivos`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
         });
 
         if (res.ok) {
@@ -46,10 +53,8 @@ export const EvolucionChart = ({ token }) => {
       }
     };
 
-    if (token) {
-      fetchData();
-    }
-  }, [token]);
+    fetchData();
+  }, []);
 
   if (loading) {
     return (

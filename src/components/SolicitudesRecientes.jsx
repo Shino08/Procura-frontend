@@ -36,7 +36,8 @@ const getEstadoConfig = (estado) => {
 };
 
 export const SolicitudesRecientes = ({
-  token,
+  userId,
+  userRole = "Usuario",
   title = "Mis Solicitudes Recientes",
   endpoint = `${API_URL}/archivos`,
   verTodasLink = "/solicitudes/admin",
@@ -48,7 +49,7 @@ export const SolicitudesRecientes = ({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!userId) return;
 
     const controller = new AbortController();
 
@@ -58,7 +59,11 @@ export const SolicitudesRecientes = ({
 
       try {
         const res = await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId || "",
+            "x-user-role": userRole || "Usuario",
+          },
           signal: controller.signal,
         });
 
@@ -81,7 +86,7 @@ export const SolicitudesRecientes = ({
 
     load();
     return () => controller.abort();
-  }, [endpoint, token]);
+  }, [endpoint, userId, userRole]);
 
   const top = useMemo(() => rows.slice(0, limit), [rows, limit]);
 

@@ -330,7 +330,7 @@ export const NuevaSolicitudPage = () => {
     if (savedCount === 0) {
       return showModal('error', 'Sin solicitudes', 'Guarda al menos una hoja.');
     }
-    showModal('success', 'Completado', `Se guardaron ${savedCount} solicitudes.`, () => navigate('/dashboard'));
+    showModal('success', 'Completado', `Se guardaron ${savedCount} solicitudes.`, () => navigate('/dashboard/client'));
   };
 
   const handleDrag = (e) => {
@@ -379,7 +379,7 @@ export const NuevaSolicitudPage = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Home", to: "/dashboard" },
+          { label: "Home", to: "/dashboard/client" },
           { label: "Nueva Solicitud", active: true }
         ]}
       />

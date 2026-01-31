@@ -1,15 +1,8 @@
 // src/pages/DashboardPage.jsx
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { UsuarioDashboard } from "./UsuarioDashboard";
 import { AdminDashboard } from "./AdminDashboard";
-
-const getSession = () => {
-  const token = localStorage.getItem("token");
-  const userEmail = localStorage.getItem("userCorreo");
-  const userRole = localStorage.getItem("userRol") || "Cliente";
-  return { token, userEmail, userRole };
-};
 
 const emailToName = (email) => {
   if (!email) return "Usuario";
@@ -18,22 +11,45 @@ const emailToName = (email) => {
 };
 
 export const DashboardPage = () => {
+  const { tipo } = useParams();
   const navigate = useNavigate();
-  const [{ token, userEmail, userRole }, setSession] = useState(getSession);
+  const [searchParams] = useSearchParams();
 
+  // 1) Lee uid/role desde URL (si vienes desde enlace entre sistemas)
+  const uidFromUrl = searchParams.get("uid");
+  const roleFromUrl = searchParams.get("role");
+
+  // 2) Si vienen por URL, persístelos
   useEffect(() => {
-    const s = getSession();
-    if (!s.token) navigate("/login");
-    else setSession(s);
-  }, [navigate]);
+    if (uidFromUrl) localStorage.setItem("userId", uidFromUrl);
+    if (roleFromUrl) localStorage.setItem("userRol", roleFromUrl);
+  }, [uidFromUrl, roleFromUrl]);
+
+  // 3) Obtén “sesión” simulada desde localStorage (SIN token)
+  const userId = localStorage.getItem("userId") || "1";
+  const userRole = localStorage.getItem("userRol") || "Usuario";
+  const userEmail = localStorage.getItem("userCorreo") || "usuario@procura.com";
 
   const userName = useMemo(() => emailToName(userEmail), [userEmail]);
 
-  if (!token) return null; // evita parpadeo mientras navega
+  // 4) Asegura que /dashboard (sin :tipo) no pase
+  // Tu router tiene "dashboard/:tipo", pero por si navegan mal:
+  useEffect(() => {
+    if (tipo !== "admin" && tipo !== "client") {
+      const normalizedTipo = userRole === "Administrador" ? "admin" : "client";
+      navigate(`/dashboard/${normalizedTipo}?uid=${encodeURIComponent(userId)}&role=${encodeURIComponent(userRole)}`, {
+        replace: true,
+      });
+    }
+  }, [tipo, navigate, userRole, userId]);
 
-  return userRole === "Administrador" ? (
-    <AdminDashboard token={token} userName={userName} />
+  // 5) Decide vista por :tipo (o por role si prefieres)
+  const isAdminView = tipo === "admin";
+
+  // Nota: si tus dashboards esperan token, pásales null o quita esa prop.
+  return isAdminView ? (
+    <AdminDashboard token={null} userName={userName} userId={Number(userId)} userRole={userRole} />
   ) : (
-    <UsuarioDashboard token={token} userName={userName} />
+    <UsuarioDashboard token={null} userName={userName} userId={Number(userId)} userRole={userRole} />
   );
 };

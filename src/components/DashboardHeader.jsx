@@ -45,10 +45,8 @@ export const DashboardHeader = ({
   }, [userNameProp, roleLabelProp]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userCorreo");
-    localStorage.removeItem("userRol");
-    navigate("/login");
+    localStorage.clear();
+    navigate("/", { replace: true });
   };
 
   return (
@@ -211,7 +209,7 @@ export const DashboardHeader = ({
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
-                  <span className="text-sm font-medium">Cerrar sesión</span>
+                  <span className="text-sm font-medium">Salir a Gestion</span>
                 </button>
               </div>
             </div>
@@ -228,9 +226,9 @@ export const DashboardHeader = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-gray-800 text-center mb-2">¿Cerrar sesión?</h3>
+            <h3 className="text-lg font-bold text-gray-800 text-center mb-2">¿Salir a Gestion?</h3>
             <p className="text-sm text-gray-600 text-center mb-6">
-              Tendrás que iniciar sesión nuevamente para acceder al sistema.
+              ¿Estas seguro de salir a Gestion?
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               <button
@@ -243,7 +241,7 @@ export const DashboardHeader = ({
                 onClick={handleLogout}
                 className="rounded-lg bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 transition-colors shadow-md"
               >
-                Cerrar sesión
+                Salir a Gestion
               </button>
             </div>
           </div>

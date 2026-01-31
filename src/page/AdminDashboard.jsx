@@ -1,6 +1,6 @@
 // src/pages/dashboard/AdminDashboard.jsx
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { NotificacionesPanel } from "../components/NotificacionesPanel";
 import { useNotificaciones } from "../hooks/useNotifications";
 import { SolicitudesRecientes } from "../components/SolicitudesRecientes";
@@ -11,6 +11,7 @@ import { CardSpinner } from "../components/LoadingSpinner";
 import { API_URL } from "../services";
 
 export const AdminDashboard = ({ token, userName }) => {
+  const {tipo} = useParams()
   const navigate = useNavigate();
   const { notificacionesNoLeidas, actualizarContador } = useNotificaciones();
   const [notificacionesOpen, setNotificacionesOpen] = useState(false);
@@ -23,15 +24,22 @@ export const AdminDashboard = ({ token, userName }) => {
     rendimiento: 0
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const userId = localStorage.getItem("userId");
+const userRole = localStorage.getItem("userRol");
 
   // Cargar estadísticas del admin
   useEffect(() => {
-    if (!token) return;
+    const uid = localStorage.getItem("userId");
+    const role = localStorage.getItem("userRol");
 
     const fetchAdminData = async () => {
       try {
         const res = await fetch(`${API_URL}/archivos`, {
-          headers: { Authorization: `Bearer ${token}` },
+  headers: {
+    "Content-Type": "application/json",
+    "x-user-id": uid || "",
+    "x-user-role": role || "Usuario",
+  },
         });
 
         if (res.ok) {
@@ -136,7 +144,7 @@ export const AdminDashboard = ({ token, userName }) => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Home", to: "/dashboard" },
+          { label: "Home", to: `/dashboard/${tipo}` },
           { label: "Panel de Administración", active: true }
         ]}
       />
@@ -186,7 +194,7 @@ export const AdminDashboard = ({ token, userName }) => {
               </div>
               <Link to="/reportes" className="text-gray-400 hover:text-gray-600 text-xl">⋯</Link>
             </div>
-            <EvolucionChart token={token} />
+            <EvolucionChart />
           </div>
 
           {/* Notifications Panel - Inline */}
@@ -303,13 +311,14 @@ export const AdminDashboard = ({ token, userName }) => {
           </div>
 
           {/* Projects Table - Simplified for admin */}
-          <SolicitudesRecientes
-            token={token}
-            title=""
-            endpoint={`${API_URL}/archivos`}
-            verTodasLink="/solicitudes/admin"
-            detalleBasePath="/solicitudes/admin"
-          />
+<SolicitudesRecientes
+  userId={userId}
+  userRole={userRole}
+  title=""
+  endpoint={`${API_URL}/archivos`}
+  verTodasLink="/solicitudes/admin"
+  detalleBasePath="/solicitudes/admin"
+/>
 
 
         </div>

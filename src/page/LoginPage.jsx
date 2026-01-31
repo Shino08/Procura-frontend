@@ -5,6 +5,40 @@ import { API_URL } from "../services";
 
 const initialForm = { correo: "", contrasenia: "" };
 
+// Usuarios estáticos para desarrollo/pruebas
+const USUARIOS_ESTICOS = [
+  {
+    id: 1,
+    correo: "admin@procura.com",
+    contrasenia: "admin123",
+    nombre: "Administrador",
+    rol: "Administrador",
+  },
+  {
+    id: 2,
+    correo: "usuario@procura.com",
+    contrasenia: "usuario123",
+    nombre: "Usuario Procura",
+    rol: "Usuario",
+  },
+];
+
+// Generar un token JWT simulado (para desarrollo)
+const generarTokenSimulado = (usuario) => {
+  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const payload = btoa(
+    JSON.stringify({
+      id: usuario.id,
+      correo: usuario.correo,
+      nombre: usuario.nombre,
+      rol: usuario.rol,
+      exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24 horas
+    })
+  );
+  const signature = btoa(JSON.stringify({ simulado: true }));
+  return `${header}.${payload}.${signature}`;
+};
+
 const decodeJwtPayload = (token) => {
   const payloadB64 = token?.split?.(".")?.[1];
   if (!payloadB64) return null;
@@ -39,45 +73,110 @@ export const LoginPage = () => {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      // VALIDACIÓN CON DATOS ESTÁTICOS
+      const usuarioEncontrado = USUARIOS_ESTICOS.find(
+        (u) => u.correo.toLowerCase() === form.correo.toLowerCase() && u.contrasenia === form.contrasenia
+      );
 
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
+      if (!usuarioEncontrado) {
         openModal({
           type: "error",
           title: "Error de autenticación",
-          message:
-            data?.message ||
-            "Credenciales inválidas. Verifica tu correo y contraseña.",
+          message: (
+            <div className="text-left">
+              <p className="mb-3">Credenciales inválidas. Para desarrollo, usa:</p>
+              <div className="space-y-2 text-sm bg-gray-50 p-3 rounded-lg">
+                <p className="font-semibold text-gray-700">📧 Cuentas disponibles:</p>
+                <div className="ml-4 space-y-1">
+                  <p><strong>admin@procura.com</strong> / admin123 <span className="text-orange-600">(Administrador)</span></p>
+                  <p><strong>usuario@procura.com</strong> / usuario123 <span className="text-blue-600">(Usuario)</span></p>
+                  <p><strong>gerencia@procura.com</strong> / gerencia123 <span className="text-blue-600">(Gerencia)</span></p>
+                </div>
+              </div>
+            </div>
+          ),
         });
         return;
       }
 
-      localStorage.setItem("token", data.token);
+      // Generar token simulado
+      const tokenSimulado = generarTokenSimulado(usuarioEncontrado);
 
-      const payload = decodeJwtPayload(data.token);
-      if (payload?.rol) localStorage.setItem("userRol", payload.rol);
-      if (payload?.correo) localStorage.setItem("userCorreo", payload.correo);
-      if (payload?.id) localStorage.setItem("userId", payload.id);
+      // Guardar en localStorage (mismo formato que la API real)
+      localStorage.setItem("token", tokenSimulado);
+      localStorage.setItem("userRol", usuarioEncontrado.rol);
+      localStorage.setItem("userCorreo", usuarioEncontrado.correo);
+      localStorage.setItem("userId", String(usuarioEncontrado.id));
+      localStorage.setItem("userName", usuarioEncontrado.nombre);
 
-      // Ajusta la ruta según tu app:
-      navigate("/dashboard");
+      // Mensaje de éxito con información del rol
+      const rolDisplay = usuarioEncontrado.rol === "administrador" ? "Administrador" : "Usuario";
+      openModal({
+        type: "success",
+        title: "¡Bienvenido!",
+        message: `Has iniciado sesión como ${rolDisplay}. Redirigiendo...`,
+      });
+
+      // Redirigir después de un breve momento
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
     } catch {
       openModal({
         type: "error",
         title: "Error de conexión",
-        message:
-          "No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.",
+        message: "No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  //   const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (loading) return;
+
+  //   setLoading(true);
+  //   try {
+  //     const res = await fetch(`${API_URL}/login`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(form),
+  //     });
+
+  //     const data = await res.json().catch(() => ({}));
+
+  //     if (!res.ok) {
+  //       openModal({
+  //         type: "error",
+  //         title: "Error de autenticación",
+  //         message:
+  //           data?.message ||
+  //           "Credenciales inválidas. Verifica tu correo y contraseña.",
+  //       });
+  //       return;
+  //     }
+
+  //     localStorage.setItem("token", data.token);
+
+  //     const payload = decodeJwtPayload(data.token);
+  //     if (payload?.rol) localStorage.setItem("userRol", payload.rol);
+  //     if (payload?.correo) localStorage.setItem("userCorreo", payload.correo);
+  //     if (payload?.id) localStorage.setItem("userId", payload.id);
+
+  //     // Ajusta la ruta según tu app:
+  //     navigate("/dashboard");
+  //   } catch {
+  //     openModal({
+  //       type: "error",
+  //       title: "Error de conexión",
+  //       message:
+  //         "No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-50 p-4 sm:p-6 flex items-center justify-center">

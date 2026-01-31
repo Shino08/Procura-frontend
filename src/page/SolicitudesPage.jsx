@@ -39,9 +39,14 @@ export const SolicitudesPage = () => {
         setLoading(true);
         setError("");
 
-        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
         const res = await fetch(`${API_URL}/archivos/usuario`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
           signal: controller.signal,
         });
 
@@ -126,7 +131,7 @@ export const SolicitudesPage = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Home", to: "/dashboard" },
+          { label: "Home", to: "/dashboard/client" },
           { label: "Mis Solicitudes", active: true }
         ]}
       />

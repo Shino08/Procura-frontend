@@ -28,7 +28,8 @@ export const ReportesGeneralesPage = () => {
   const [periodoFiltro, setPeriodoFiltro] = useState('all'); // 'all', 'month', 'week'
   const [estadoFiltro, setEstadoFiltro] = useState('todos');
 
-  const token = localStorage.getItem("token");
+  const uid = localStorage.getItem("userId");
+  const role = localStorage.getItem("userRol");
 
   useEffect(() => {
     const storedUserName = localStorage.getItem("userCorreo") || "Usuario";
@@ -44,7 +45,11 @@ export const ReportesGeneralesPage = () => {
       try {
         // Fetch archivos
         const archivosRes = await fetch(`${API_URL}/archivos`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          }
         });
 
         if (!archivosRes.ok) throw new Error("Error al cargar archivos");
@@ -55,7 +60,11 @@ export const ReportesGeneralesPage = () => {
 
         // Fetch estados
         const estadosRes = await fetch(`${API_URL}/estados`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          }
         });
 
         if (estadosRes.ok) {
@@ -71,8 +80,8 @@ export const ReportesGeneralesPage = () => {
       }
     };
 
-    if (token) fetchData();
-  }, [token]);
+    if (uid) fetchData();
+  }, []);
 
   // Filtrar archivos por período
   const archivosFiltrados = useMemo(() => {
@@ -275,7 +284,7 @@ export const ReportesGeneralesPage = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Dashboard", to: "/dashboard" },
+          { label: "Dashboard", to: "/dashboard/admin" },
           { label: "Reportes Generales", active: true }
         ]}
       />

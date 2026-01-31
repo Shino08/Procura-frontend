@@ -52,24 +52,13 @@ export const ItemDetailsModal = ({
   const [currentUserName, setCurrentUserName] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("⚠️ No hay token en localStorage");
-      return;
-    }
+    const uid = localStorage.getItem("userId");
+    const role = localStorage.getItem("userRol");
+    const userName = localStorage.getItem("userCorreo");
 
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const rol = payload.rol || payload.role || payload.nombreRol;
-      const userId = payload.id || payload.userId || payload.sub;
-      const userName = payload.nombre || payload.name || payload.username;
-
-      setUserRole(rol);
-      setCurrentUserId(userId);
-      setCurrentUserName(userName);
-    } catch (e) {
-      console.error("❌ Error decodificando token:", e);
-    }
+    setCurrentUserId(uid);
+    setUserRole(role);
+    setCurrentUserName(userName);
   }, []);
 
   const roleNormalized = (userRole || "").trim().toLowerCase();
@@ -140,9 +129,14 @@ export const ItemDetailsModal = ({
     (async () => {
       try {
         setLoadingEstados(true);
-        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
         const res = await fetch(`${API_URL}/estados`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
           signal: controller.signal,
         });
 
@@ -180,9 +174,14 @@ export const ItemDetailsModal = ({
         setLoadingAdjuntos(true);
         setErrorAdjuntos("");
 
-        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
         const res = await fetch(`${API_URL}/items/${item.id}`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
           signal: controller.signal,
         });
 
@@ -217,11 +216,16 @@ export const ItemDetailsModal = ({
       try {
         setLoadingObservaciones(true);
 
-        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
 
         // ✅ TU ENDPOINT REAL: GET /observaciones/:itemId
         const res = await fetch(`${API_URL}/observaciones/${item.id}`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
           signal: controller.signal,
         });
 
@@ -259,14 +263,16 @@ export const ItemDetailsModal = ({
     setErrorSave("");
 
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
 
       if (selectedEstadoId && selectedEstadoId !== item.estado?.id) {
         const resEstado = await fetch(`${API_URL}/estados/${item.id}/`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
           },
           body: JSON.stringify({ idEstado: selectedEstadoId }),
         });
@@ -298,13 +304,15 @@ export const ItemDetailsModal = ({
     setErrorSave("");
 
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
 
       const res = await fetch(`${API_URL}/observaciones/${item.id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
         },
         body: JSON.stringify({ observacion: texto }),
       });
@@ -322,7 +330,11 @@ export const ItemDetailsModal = ({
       } else {
         // Caso B: el backend devuelve solo {ok:true} o similar -> recargar lista
         const res2 = await fetch(`${API_URL}/observaciones/${item.id}`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
         });
 
         const data2 = await res2.json().catch(() => ({}));
@@ -351,13 +363,15 @@ export const ItemDetailsModal = ({
     setErrorSave("");
 
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
 
       const res = await fetch(`${API_URL}/estados/${item.id}/aprobar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
         },
       });
 
@@ -389,13 +403,15 @@ export const ItemDetailsModal = ({
     setErrorSave("");
 
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
 
       const res = await fetch(`${API_URL}/estados/${item.id}/cancelar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
         },
       });
 
@@ -422,7 +438,8 @@ export const ItemDetailsModal = ({
 
     setUploading(true);
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
       const fd = new FormData();
 
       files.forEach((f) => fd.append("archivo", f));
@@ -431,7 +448,10 @@ export const ItemDetailsModal = ({
 
       const res = await fetch(`${API_URL}/items/${item.id}/adjuntar`, {
         method: "POST",
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        headers: {
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
+        },
         body: fd,
       });
 
@@ -444,9 +464,14 @@ export const ItemDetailsModal = ({
 
       // Recargar adjuntos
       if (activeTab === "archivos") {
-        const token2 = localStorage.getItem("token");
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
         const res2 = await fetch(`${API_URL}/items/${item.id}`, {
-          headers: { Authorization: token2 ? `Bearer ${token2}` : "" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
         });
         if (res2.ok) {
           const data = await res2.json();
@@ -462,10 +487,16 @@ export const ItemDetailsModal = ({
 
   const download = async (archivoId) => {
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
       const url = `${API_URL}/items/${item.id}/${archivoId}`;
 
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(url, {
+        headers: {
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
+        },
+      });
       if (!res.ok) throw new Error("No se pudo descargar");
 
       const blob = await res.blob();
@@ -493,12 +524,16 @@ export const ItemDetailsModal = ({
     setErrorAdjuntos("");
 
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
       const url = `${API_URL}/items/${item.id}/adjuntos/${adjuntoToDelete}`;
 
       const res = await fetch(url, {
         method: "DELETE",
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        headers: {
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
+        },
       });
 
       if (!res.ok) {

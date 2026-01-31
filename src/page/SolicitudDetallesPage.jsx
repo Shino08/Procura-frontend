@@ -91,9 +91,14 @@ export const SolicitudDetallesPage = () => {
     const controller = new AbortController();
     (async () => {
       try {
-        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
         const res = await fetch(`${API_URL}/estados`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
           signal: controller.signal,
         });
         if (!res.ok) return;
@@ -107,9 +112,14 @@ export const SolicitudDetallesPage = () => {
   // Función para cargar/refrescar los datos
   const fetchDetails = async (signal) => {
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
       const res = await fetch(`${API_URL}/archivos/detalles/${fileId}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
+        },
         signal: signal,
       });
 
@@ -169,12 +179,14 @@ export const SolicitudDetallesPage = () => {
 
     setDownloading(true);
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
 
       const response = await fetch(`${API_URL}/archivos/${header.archivoId}/descargar`, {
         method: "GET",
         headers: {
-          Authorization: token ? `Bearer ${token}` : "",
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
         },
       });
 
@@ -212,12 +224,14 @@ export const SolicitudDetallesPage = () => {
 
     setGeneratingPdf(true);
     try {
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
 
       const response = await fetch(`${API_URL}/generar-pdf/${solicitudActivaId}`, {
         method: "GET",
         headers: {
-          Authorization: token ? `Bearer ${token}` : "",
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
         },
       });
 
@@ -420,7 +434,7 @@ export const SolicitudDetallesPage = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Home", to: "/dashboard" },
+          { label: "Home", to: "/dashboard/client" },
           { label: "Mis Solicitudes", to: "/solicitudes/usuario" },
           { label: `Detalle ${header.id}`, active: true }
         ]}

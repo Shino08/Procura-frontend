@@ -39,9 +39,14 @@ export const GestionSolicitudesPage = () => {
         setLoading(true);
         setError("");
 
-        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("userId");
+        const role = localStorage.getItem("userRol");
         const res = await fetch(`${API_URL}/archivos`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": uid || "",
+            "x-user-role": role || "Usuario",
+          },
           signal: controller.signal,
         });
 
@@ -102,11 +107,15 @@ export const GestionSolicitudesPage = () => {
     try {
       if (!archivoId) throw new Error("ID de archivo inválido");
 
-      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("userId");
+      const role = localStorage.getItem("userRol");
       const url = `${API_URL}/archivos/${archivoId}/descargar`;
 
       const res = await fetch(url, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        headers: {
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
+        },
       });
 
       if (!res.ok) {
@@ -180,7 +189,7 @@ export const GestionSolicitudesPage = () => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Home", to: "/dashboard" },
+          { label: "Home", to: "/dashboard/admin" },
           { label: "Gestión de Solicitudes", active: true }
         ]}
       />

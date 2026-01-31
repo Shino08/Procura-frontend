@@ -21,15 +21,22 @@ export const UsuarioDashboard = ({ token, userName }) => {
     rendimiento: 0
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const userId = localStorage.getItem("userId");
+  const userRole = localStorage.getItem("userRol");
 
   // Cargar estadísticas del usuario
   useEffect(() => {
-    if (!token) return;
+    const uid = localStorage.getItem("userId");
+    const role = localStorage.getItem("userRol");
 
     const fetchStats = async () => {
       try {
         const res = await fetch(`${API_URL}/archivos/usuario`, {
-          headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": uid || "",
+          "x-user-role": role || "Usuario",
+        },
         });
 
         if (res.ok) {
@@ -56,7 +63,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
     };
 
     fetchStats();
-  }, [token]);
+  }, []);
 
   const quickActions = useMemo(
     () => [
@@ -141,7 +148,7 @@ export const UsuarioDashboard = ({ token, userName }) => {
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
-          { label: "Home", to: "/dashboard" },
+          { label: "Home", to: "/dashboard/client" },
           { label: "Mi Panel", active: true }
         ]}
       />
@@ -274,7 +281,8 @@ export const UsuarioDashboard = ({ token, userName }) => {
 
         {/* Recent Requests */}
         <SolicitudesRecientes
-          token={token}
+          userId={userId}
+          userRole={userRole}
           title="Mis Solicitudes Recientes"
           endpoint={`${API_URL}/archivos/usuario`}
           verTodasLink="/solicitudes/usuario"
