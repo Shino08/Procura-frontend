@@ -185,10 +185,6 @@ export const AdminDashboard = ({ token, userName }) => {
           <p className="mt-1 text-xs sm:text-sm text-gray-600">
             Gestiona todas las solicitudes y monitorea el rendimiento del sistema.
           </p>
-          {/* ✅ Mostrar valores actuales (para debug) */}
-          <p className="mt-2 text-xs text-blue-600">
-            👤 ID: {userId} | Rol: {userRole}
-          </p>
         </div>
 
         {/* Stats Cards */}

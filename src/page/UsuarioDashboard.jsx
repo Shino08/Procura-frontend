@@ -179,10 +179,6 @@ export const UsuarioDashboard = ({ token, userName }) => {
           <p className="mt-1 text-xs sm:text-sm text-gray-600">
             Administra tus solicitudes y haz seguimiento.
           </p>
-          {/* ✅ Mostrar valores actuales (para debug) */}
-          <p className="mt-2 text-xs text-green-600">
-            👤 ID: {userId} | Rol: {userRole}
-          </p>
         </div>
 
         {/* Stats Cards con efectos hover mejorados */}
